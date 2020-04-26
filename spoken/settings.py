@@ -114,7 +114,7 @@ TEMPLATES = [
             ],
         },
     },
-]   
+]
 
 WSGI_APPLICATION = 'spoken.wsgi.application'
 
@@ -131,8 +131,8 @@ DATABASES = {
         'USER': DB_USER,
         'PASSWORD': DB_PASS,
         'HOST': '',                            # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',    
-    
+        'PORT': '',
+
     },
         'moodle': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -223,7 +223,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/') # Absolute path to the media.
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://example.com/media/", "http://media.example.com/"
-MEDIA_URL = '/media/'
+MEDIA_URL = 'https://spoken-tutorial.org/media/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -339,3 +339,7 @@ CACHES = {
         'TIMEOUT': 3600 * 24,
     }
 }
+
+# RabbitMQ will act as message broker for celery
+# AMQP Messaging protocol is used
+CELERY_BROKER_URL = "amqp://127.0.0.1:5672"
