@@ -5,8 +5,7 @@ python:
   - 3.6
 
 services:
-# - mysql
-
+# - mys
 cache:
   directories:
     - $HOME/.cache/pip
@@ -17,7 +16,7 @@ before_cache:
 
 install:
   # - pip install python-coveralls
-  - pip install -r requirements-dev.txt
+  # - pip install -r requirements-dev.txt
 
 before_script:
 # - cp config.sample.py config.py
