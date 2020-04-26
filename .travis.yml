@@ -26,7 +26,7 @@ before_script:
 # - sed -i "s/your_database_password_here//g" config.py
 
 script:
-  flake8 videoprocessing
+  - flake8 videoprocessing
   # - ./lint.sh
 # - py.test --create-db --cov -v --tb=native
 
