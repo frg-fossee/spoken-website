@@ -13,7 +13,7 @@ before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
 
 install:
-  - pip install flak8
+  - pip install flake8
   # - pip install python-coveralls
   # - pip install -r requirements-dev.txt
 
