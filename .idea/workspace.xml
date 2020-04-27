@@ -39,12 +39,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="17008f37-7c00-424e-ab0d-e5394cdc976a" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/spoken-website.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/spoken-website.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/events/viewsv2.py" beforeDir="false" afterPath="$PROJECT_DIR$/events/viewsv2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spoken/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/spoken/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/videoprocessing/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/videoprocessing/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,7 +117,7 @@
       <option name="presentableId" value="Default" />
       <updated>1558440246986</updated>
       <workItem from="1587871807761" duration="1547000" />
-      <workItem from="1587967938123" duration="5727000" />
+      <workItem from="1587967938123" duration="6524000" />
     </task>
     <servers />
   </component>

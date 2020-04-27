@@ -14,3 +14,11 @@ services:
   rabbitmq:
     image: rabbitmq:alpine
     network_mode: host
+
+  #  Distributed Task Queue to achieve asynchronous behaviour
+  celery_worker:
+    <<: *app
+    command: "celery -A spoken worker --loglevel=info"
+    ports: []
+    depends_on:
+      - rabbitmq
