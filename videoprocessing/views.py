@@ -1,37 +1,32 @@
+from django.shortcuts import render, redirect
 from rest_framework import generics
-from rest_framework.response import Response
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 from creation.models import ContributorRole
 from videoprocessing.serializers import ContributorTutorialsSerializer
 
 
-class ContributorTutorialList(generics.ListAPIView):
+def index(request):
+    """
+    The View which will load the frontend of App
+    """
+    if request.user.is_authenticated and ContributorRole.objects.filter(user=request.user).count():
+        return render(request, 'videoprocessing/index.html')
+    return redirect('%s?next=%s' % ('/accounts/login/', request.path))
+
+
+# All the APIs
+
+class ContributorTutorialsList(generics.ListAPIView):
+    """
+    This view should return a list of all the tutorials
+    allotted to a particular contributor
+    """
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ContributorTutorialsSerializer
+
     def get_queryset(self):
-        return ContributorRole.objects.filter(user=self.request.user, status=True)
-
-    def get(self, request):
-        categories = ContributorTutorialsSerializer(self.get_queryset(), many=True).data
-
-        unique_categories = {}
-        res = []
-
-        for category in categories:
-            category_id = category['foss_category']['id']
-
-            if category_id not in unique_categories:
-                foss_category = category['foss_category']
-                unique_categories[category_id] = {
-                    'foss_category': {
-                        'id': foss_category['id'],
-                        'name': foss_category['name'],
-                        'description': foss_category['description']
-                    },
-                    'languages': []
-                }
-
-            unique_categories[category_id]['languages'].append(category['language'])
-
-        for (k, v) in unique_categories.items():
-            res.append(v)
-
-        return Response({'data': res}, status=200)
+        user = self.request.user
+        return ContributorRole.objects.filter(user=user, status=True)

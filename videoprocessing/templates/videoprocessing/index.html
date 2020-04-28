@@ -1,0 +1,9 @@
+{#{% extends 'spoken/templates/base.html' %}#}
+{#{% load static %}#}
+
+<script>
+  console.log('hi')
+  fetch('/videoprocessing/api/tutorials/')
+          .then((res) => res.json())
+          .then((x) => console.log(x))
+</script>

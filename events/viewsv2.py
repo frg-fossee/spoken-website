@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.utils.decorators import method_decorator
 from events.decorators import group_required
-# from events import display
+from events import display
 from events.forms import StudentBatchForm, TrainingRequestForm, \
     TrainingRequestEditForm, CourseMapForm, SingleTrainingForm, \
     OrganiserFeedbackForm,STWorkshopFeedbackForm,STWorkshopFeedbackFormPre,STWorkshopFeedbackFormPost,LearnDrupalFeedbackForm, LatexWorkshopFileUploadForm, UserForm, \
@@ -3022,7 +3022,7 @@ def trainingrequest(request, role, status):
     prev_sem_type = 'odd'
     prev_sem_year = (year - 1)
   prev_sem_start_date, prev_sem_end_date = get_prev_semester_duration(prev_sem_type, prev_sem_year)
-  
+
   if not (user.is_authenticated() and (is_resource_person(user) or is_administrator(user))):
     raise PermissionDenied()
 
@@ -3245,10 +3245,10 @@ def GenerateCertificate(request, trid):
     messages.success(request, 'Certificates generated.')
   else:
     messages.error(request, 'Something went wrong Please try again')
-  return HttpResponseRedirect("/software-training/certificate-request/rp/training/") 
+  return HttpResponseRedirect("/software-training/certificate-request/rp/training/")
 
 
-class AllTrainingCertificateView(TrainingCertificate, View):  
+class AllTrainingCertificateView(TrainingCertificate, View):
   @method_decorator(group_required("Organiser"))
   def dispatch(self, *args, **kwargs):
     return super(AllTrainingCertificateView, self).dispatch(*args, **kwargs)
@@ -3258,7 +3258,7 @@ class AllTrainingCertificateView(TrainingCertificate, View):
       ta_list = TrainingAttend.objects.filter(training_id=kwargs['trid'])
     except ObjectDoesNotExist:
       messages.error(self.request, "Record not found")
-      pass    
+      pass
 
     output = PdfFileWriter()
 
@@ -3316,7 +3316,7 @@ class AllTrainingCertificateView(TrainingCertificate, View):
       page.mergePage(overlay)
 
       #Save the result
-      
+
       output.addPage(page)
 
     #stream to browser
@@ -3330,11 +3330,11 @@ class AllTrainingCertificateView(TrainingCertificate, View):
 class StudentGradeFilter(UserPassesTestMixin, FormView):
   template_name = 'events/templates/student_grade_filter.html'
   form_class = StudentGradeFilterForm
-  success_url = '/software-training/student-grade-filter/' 
+  success_url = '/software-training/student-grade-filter/'
 
   def test_func(self):
         return self.request.user.is_superuser
-  
+
   def form_valid(self, form):
     """
     If the form is valid, redirect to the supplied URL.
@@ -3363,25 +3363,25 @@ class StudentGradeFilter(UserPassesTestMixin, FormView):
         dictgrade = {i[0]:{i[1]:[i[2],False]} for i in user_grade}
         #get all test attendance for moodle user ids and for a specific moodle quiz ids
         test_attendance=TestAttendance.objects.filter(
-                                  mdluser_id__in=list(dictgrade.keys()), 
-                                  mdlquiz_id__in=[f.mdlquiz_id for f in fossmdl], 
+                                  mdluser_id__in=list(dictgrade.keys()),
+                                  mdlquiz_id__in=[f.mdlquiz_id for f in fossmdl],
                                   test__academic__state__in=state if state else State.objects.all(),
-                                  test__academic__city__in=city if city else City.objects.all(), 
-                                  status__gte=3, 
-                                  test__academic__institution_type__in=institution_type if institution_type else InstituteType.objects.all(), 
+                                  test__academic__city__in=city if city else City.objects.all(),
+                                  status__gte=3,
+                                  test__academic__institution_type__in=institution_type if institution_type else InstituteType.objects.all(),
                                   test__academic__status__in=[activation_status] if activation_status else [1,3]
                                 )
         if from_date and to_date:
           test_attendance = test_attendance.filter(test__tdate__range=[from_date, to_date])
         elif from_date:
           test_attendance = test_attendance.filter(test__tdate__gte=from_date)
-          
+
         filter_ta=[]
         for i in range(test_attendance.count()):
           if not dictgrade[test_attendance[i].mdluser_id][test_attendance[i].mdlquiz_id][1]:
             dictgrade[test_attendance[i].mdluser_id][test_attendance[i].mdlquiz_id][1] = True
             filter_ta.append(test_attendance[i])
-            
+
         #return the result as dict
         return {'mdl_user_grade': dictgrade, 'test_attendance': filter_ta, "count":len(filter_ta)}
       except FossMdlCourses.DoesNotExist:

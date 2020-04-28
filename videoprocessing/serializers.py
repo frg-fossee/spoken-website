@@ -1,5 +1,6 @@
-from creation.models import ContributorRole, FossCategory, Language
 from rest_framework import serializers
+
+from creation.models import ContributorRole, FossCategory, Language, TutorialDetail
 
 
 class FossCategorySerializer(serializers.ModelSerializer):
@@ -16,6 +17,12 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
+class TutorialDetailSerialzer(serializers.ModelSerializer):
+    class Meta:
+        model = TutorialDetail
+        fields = ('tutorial',)
+
+
 class ContributorTutorialsSerializer(serializers.ModelSerializer):
     """
     Serializer to list all the tutorials alloted to a particular contributor
@@ -23,7 +30,8 @@ class ContributorTutorialsSerializer(serializers.ModelSerializer):
     foss_category = FossCategorySerializer(read_only=True)
     language = LanguageSerializer(read_only=True)
     user = serializers.CharField()
+    tutorial_detail = TutorialDetailSerialzer(read_only=True)
 
     class Meta:
         model = ContributorRole
-        fields = ('foss_category', 'language', 'user', 'status')
+        fields = ('foss_category', 'tutorial_detail', 'language', 'user',)
