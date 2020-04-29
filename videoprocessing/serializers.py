@@ -20,7 +20,7 @@ class LanguageSerializer(serializers.ModelSerializer):
 class TutorialDetailSerialzer(serializers.ModelSerializer):
     class Meta:
         model = TutorialDetail
-        fields = ('tutorial',)
+        fields = ('tutorial', 'pk')
 
 
 class ContributorTutorialsSerializer(serializers.ModelSerializer):
