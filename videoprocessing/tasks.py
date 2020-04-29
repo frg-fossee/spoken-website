@@ -15,13 +15,26 @@ def repl(m):
 
 
 @shared_task
-def process_video(video_id):
+def process_video(video_id, file_path):
     """
     this function will break the uploaded video into
     chunks and will store audio separately
     """
-    folder_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id)
+    print(file_path)
+    folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
+    print(str(folder_path))
+    os.mkdir(folder_path)
     os.chdir(folder_path)
+    os.system('pwd')
+    print("cp " + file_path + '.mp4 ' + settings.MEDIA_ROOT + "videoprocessing/" + video_id + '/video.mp4')
+    os.system("cp " + file_path + '.mp4 ' + settings.MEDIA_ROOT + "videoprocessing/" + video_id + '/video.mp4')
+    os.system("cp " + file_path + '.srt ' + str(folder_path) + "/subtitle.srt")
+    VideoTutorial.objects.filter(pk=video_id).update(
+        video=os.path.join("videoprocessing", video_id, 'video.mp4'),
+        subtitle=os.path.join("videoprocessing", video_id, 'subititle.srt'),
+        processed_video=os.path.join("videoprocessing", video_id, 'video.mp4')
+    )
+
     chunk_directory = os.path.join(folder_path, 'chunks')
     os.mkdir(chunk_directory)
     fp = open('subtitle.srt', 'r')
@@ -73,8 +86,8 @@ def process_video(video_id):
 
         VideoChunk.objects.create(
             chunk_no=i,
-            VideoSubmission=VideoTutorial.objects.get(id=video_id),
-            audio_chunk=os.path.join(video_id, 'chunks', str(i) + '.mp3'),
+            VideoTutorial=VideoTutorial.objects.get(id=video_id),
+            audio_chunk=os.path.join("videoprocessing/" + video_id, 'chunks', str(i) + '.mp3'),
             start_time=start_time,
             end_time=end_time,
             subtitle=sub_text
@@ -103,7 +116,7 @@ def new_audio_trim(chunk):
 
     diff = datetime.strptime(end_time, time_format) - datetime.strptime(start_time, time_format)
 
-    folder_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id)
+    folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
     chunk_directory = os.path.join(folder_path, 'chunks')
     os.chdir(chunk_directory)
     os.rename(chunk_file, 'temp.mp3')
@@ -121,7 +134,7 @@ def new_audio_trim(chunk):
 @shared_task()
 def compile_all_chunks(video_id):
     """Combine all the chunks and return a processed video"""
-    folder_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id)
+    folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
     chunk_directory = os.path.join(folder_path, 'chunks')
     os.chdir(chunk_directory)
     timestamp = str(time.strftime("%Y%m%d-%H%M%S"))
@@ -136,6 +149,6 @@ def compile_all_chunks(video_id):
     command = 'ffmpeg -hide_banner -loglevel warning -y -i ../nosound.mp4 -i ' + audio_filename + ' -c copy -shortest ' + video_filename
     os.system(command)
 
-    file_path = os.path.join(video_id, 'chunks', video_filename)
+    file_path = os.path.join("videoprocessing/" + video_id, 'chunks', video_filename)
     VideoTutorial.objects.filter(pk=video_id). \
         update(status='done', processed_video=file_path)

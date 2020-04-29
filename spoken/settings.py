@@ -223,7 +223,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')  # Absolute path to the media.
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://example.com/media/", "http://media.example.com/"
-MEDIA_URL = 'https://spoken-tutorial.org/media/'
+MEDIA_URL = '/media/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -341,7 +341,7 @@ CACHES = {
 
 # RabbitMQ will act as message broker for celery
 # AMQP Messaging protocol is used
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "ampq://127.0.0.1:800")
-VIDEO_PROCESSING_ROOT = os.path.join(MEDIA_ROOT, '/videoprocessing')
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "amqp://127.0.0.1:5672")
+VIDEO_PROCESSING_ROOT = 'videoprocessing'
 VIDEO_PROCESSING_VIDEO_FILE_NAME = 'video'
 VIDEO_PROCESSING_SUBTITLE_FILE_NAME = 'subtitle'

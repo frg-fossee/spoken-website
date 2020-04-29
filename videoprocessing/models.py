@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from creation.models import TutorialDetail
+from creation.models import TutorialDetail, Language
 from videoprocessing.storage import OverwriteStorage
 
 
@@ -98,6 +98,7 @@ class VideoTutorial(models.Model):
                           default=uuid.uuid4,
                           editable=False)
     tutorial_detail = models.ForeignKey(TutorialDetail)
+    language = models.ForeignKey(Language)
     status = models.CharField(default='in_queue', max_length=10)
     video = models.FileField(upload_to=get_video_path,
                              validators=[validate_video])
