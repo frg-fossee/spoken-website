@@ -97,9 +97,10 @@ class VideoTutorial(models.Model):
     id = models.UUIDField(primary_key=True,
                           default=uuid.uuid4,
                           editable=False)
+    checksum = models.CharField(max_length=32)
     tutorial_detail = models.ForeignKey(TutorialDetail)
     language = models.ForeignKey(Language)
-    status = models.CharField(default='in_queue', max_length=10)
+    status = models.CharField(default='in_queue', max_length=32)
     video = models.FileField(upload_to=get_video_path,
                              validators=[validate_video])
     subtitle = models.FileField(upload_to=get_subtitle_path,

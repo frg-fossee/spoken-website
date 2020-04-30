@@ -18,10 +18,10 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
-class TutorialDetailSerialzer(serializers.ModelSerializer):
+class TutorialDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TutorialDetail
-        fields = ('tutorial', 'pk')
+        fields = ('id', 'tutorial',)
 
 
 class ContributorTutorialsSerializer(serializers.ModelSerializer):
@@ -30,12 +30,13 @@ class ContributorTutorialsSerializer(serializers.ModelSerializer):
     """
     foss_category = FossCategorySerializer(read_only=True)
     language = LanguageSerializer(read_only=True)
-    user = serializers.CharField()
-    tutorial_detail = TutorialDetailSerialzer(read_only=True)
+    tutorial_detail = TutorialDetailSerializer(read_only=True)
+    pratik = serializers.CharField(allow_null=True, default=None)
 
     class Meta:
         model = ContributorRole
-        fields = ('foss_category', 'tutorial_detail', 'language', 'user',)
+        fields = ('foss_category', 'tutorial_detail', 'language', 'pratik')
+        write_only_fields = ('pratik',)
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -43,10 +44,10 @@ class VideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoTutorial
-        fields = ['id', 'status', 'tutorial_detail', 'language',
-                                                     'video', 'subtitle', 'total_chunks', 'processed_video']
-        read_only_fields = ['id', 'status', 'tutorial_detail', 'language',
-                                                               'video', 'subtitle', 'total_chunks', 'processed_video']
+        fields = ['id', 'checksum', 'status', 'tutorial_detail', 'language',
+                  'video', 'subtitle', 'total_chunks', 'processed_video']
+        read_only_fields = ['id', 'checksum', 'status', 'tutorial_detail', 'language',
+                            'video', 'subtitle', 'total_chunks', 'processed_video']
 
 
 class VideoChunkSerializer(serializers.ModelSerializer):

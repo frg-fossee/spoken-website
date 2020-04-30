@@ -10,8 +10,9 @@ from rest_framework.response import Response
 
 from creation.models import ContributorRole, TutorialDetail, Language
 from videoprocessing.models import VideoTutorial, VideoChunk
+from videoprocessing.permissions import is_tutorial_allotted, IsContributor
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer
-from videoprocessing.tasks import process_video
+from videoprocessing.tasks import process_video, copy_video_generate_checksum
 
 
 def index(request):
@@ -27,39 +28,41 @@ def index(request):
 
 class ContributorTutorialsList(generics.ListAPIView):
     """
-    This view should return a list of all the tutorials
-    allotted to a particular contributor
+    This view should return a list of all the tutorials allotted to a particular contributor
     """
     authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = ContributorTutorialsSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return ContributorRole.objects.filter(user=user, status=True)
+        try:
+            user = self.request.user
+            tutorials = ContributorRole.objects.filter(user=user, status=True)
+            return tutorials
+        except ContributorRole.DoesNotExist:
+            raise exceptions.NotFound('No Tutorials Found')
 
 
 class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
     authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = VideoSerializer
 
     def get_queryset(self):
         user = self.request.user
         return VideoTutorial.objects.filter(user=user)
 
-    # def get(self, request, *args, **kwargs):
-    #     """All the Videos and subtitles uploaded will be listed"""
-    #     print(request.user)
-    #     return self.list(request, *args, **kwargs)
+    def get(self, request, *args, **kwargs):
+        """All the Videos and subtitles uploaded will be listed"""
+        print(request.user)
+        return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         """creating a new project"""
         tutorial_id = self.kwargs['tutorial_id']
         language_id = self.kwargs['language_id']
         print('check')
-        if ContributorRole.objects.filter(user=request.user, tutorial_detail_id=tutorial_id,
-                                          language_id=language_id).count():
+        if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
             tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
             foss_id = tutorial_detail_object.foss_id
             tutorial_name = str(tutorial_detail_object)
@@ -75,7 +78,7 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
                 user=self.request.user
             )
             video_tutorial_object.save()
-            process_video.delay(video_tutorial_object.id, src)
+            copy_video_generate_checksum.delay(video_tutorial_object.id, src)
             return Response({'id': video_tutorial_object.id}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
