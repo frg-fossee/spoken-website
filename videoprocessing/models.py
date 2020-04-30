@@ -82,9 +82,9 @@ def get_audio_chunk_path(instance, filename):
     Get path to store audio chunk
     the path will be of format : videoprcessing/project_id/chunks/chunk_no.mp3
     """
-    if (not instance.VideoSubmission.id) and (not instance.chunk_no):
+    if (not instance.VideoTutorial.id) and (not instance.chunk_no):
         raise ValidationError('Invalid Project ID')
-    return os.path.join(settings.VIDEO_PROCESSING_ROOT, str(instance.VideoSubmission.id) + '/chunks/',
+    return os.path.join(settings.VIDEO_PROCESSING_ROOT, str(instance.VideoTutorial.id) + '/chunks/',
                         str(instance.chunk_no) + '.mp3')
 
 
@@ -116,7 +116,7 @@ class VideoTutorial(models.Model):
 class VideoChunk(models.Model):
     """
     This model hold processed video chunk
-    It has many-to-one relationship with VideoSubmission Object
+    It has many-to-one relationship with VideoTutorial Object
     """
     chunk_no = models.SmallIntegerField()
     VideoTutorial = models.ForeignKey(VideoTutorial,

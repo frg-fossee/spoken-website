@@ -103,7 +103,7 @@ def process_video(video_id):
         # for the first video without subtitle
         if (i == 0) and (start_time != '00:00:00.000'):
             command = str(
-                "ffmpeg -hide_banner -loglevel warning -i " +
+                "ffmpeg -i " +
                 AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                 " -ss 00:00:00.000 " +
                 " -to " + start_time +
@@ -115,7 +115,7 @@ def process_video(video_id):
             nos_start_time = str(subs[i].end).replace(',', '.')
             nos_end_time = str(subs[i + 1].start).replace(',', '.')
             if nos_start_time != nos_end_time:
-                command = str("ffmpeg -hide_banner -loglevel warning -i " +
+                command = str("ffmpeg -i " +
                               AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                               " -ss " +
                               nos_start_time +
@@ -126,7 +126,7 @@ def process_video(video_id):
                 compile_video_list.write("file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + "'\n")
 
         audio_file_name = chunk_directory + "/" + str(i) + AUDIO_FILE_EXTENSION
-        command = str("ffmpeg -hide_banner -loglevel warning -i " +
+        command = str("ffmpeg -i " +
                       AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                       " -ss " +
                       start_time +
@@ -146,7 +146,7 @@ def process_video(video_id):
 
         if i == len(subs) - 1:
             command = str(
-                "ffmpeg -hide_banner -loglevel warning  -i " +
+                "ffmpeg -i " +
                 AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                 " -ss " + end_time +
                 " -c copy " + nos_audio_file_name)
@@ -160,7 +160,7 @@ def process_video(video_id):
 @shared_task
 def new_audio_trim(chunk):
     chunk_file = str(chunk['chunk_no']) + AUDIO_FILE_EXTENSION
-    video_id = chunk['VideoSubmission']
+    video_id = chunk['VideoTutorial']
     start_time = chunk['start_time']
     end_time = chunk['end_time']
     time_format = '%H:%M:%S'
@@ -173,8 +173,8 @@ def new_audio_trim(chunk):
     chunk_directory = os.path.join(folder_path, CHUNKS_DIRECTORY)
     os.chdir(chunk_directory)
     os.rename(chunk_file, 'temp.mp3')
-    os.system('ffmpeg -hide_banner -loglevel warning -i temp.mp3 -ab 160k -ac 2 -ar 44100 temp1.mp3')
-    command = str("ffmpeg -hide_banner -loglevel warning -y -i temp1.mp3 -ss 00:00:00.000 " +
+    os.system('ffmpeg -i temp.mp3 -ab 160k -ac 2 -ar 44100 temp1.mp3')
+    command = str("ffmpeg -y -i temp1.mp3 -ss 00:00:00.000 " +
                   " -to " + str(diff) +
                   " -c copy " + chunk_file)
     os.system(command)
@@ -194,17 +194,17 @@ def compile_all_chunks(video_id):
     audio_filename = PROCESSED_VIDEO_PREFIX + timestamp + AUDIO_FILE_EXTENSION
     video_filename = PROCESSED_VIDEO_PREFIX + timestamp + VIDEO_FILE_EXTENSION
 
-    command = 'ffmpeg -hide_banner -loglevel warning -y -f concat -safe 0 -i ' + \
+    command = 'ffmpeg -y -f concat -safe 0 -i ' + \
               CHUNKS_LIST_FILE_NAME + \
               ' -c copy ' + audio_filename
 
     os.system(command)
 
-    command = 'ffmpeg -hide_banner -loglevel warning -y -i ../' + \
+    command = 'ffmpeg -y -i ../' + \
               VIDEO_WITHOUT_AUDIO_FILE_NAME + VIDEO_FILE_EXTENSION + \
               ' -i ' + audio_filename + ' -c copy -shortest ' + video_filename
     os.system(command)
 
-    file_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, 'chunks', video_filename)
+    file_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, CHUNKS_DIRECTORY, video_filename)
     VideoTutorial.objects.filter(pk=video_id). \
         update(status='done', processed_video=file_path)

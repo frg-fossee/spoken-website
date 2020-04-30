@@ -2,6 +2,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.http import Http404
 from django.shortcuts import render, redirect
 from rest_framework import generics, mixins, status, exceptions
 from rest_framework.authentication import SessionAuthentication
@@ -11,8 +12,9 @@ from rest_framework.response import Response
 from creation.models import ContributorRole, TutorialDetail, Language
 from videoprocessing.models import VideoTutorial, VideoChunk
 from videoprocessing.permissions import is_tutorial_allotted, IsContributor
-from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer
-from videoprocessing.tasks import copy_video_generate_checksum
+from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer, \
+    ChangeAudioSerializer
+from videoprocessing.tasks import copy_video_generate_checksum, new_audio_trim
 
 
 def index(request):
@@ -83,6 +85,8 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
 
 class GetVideoChunk(generics.ListAPIView):
     """Endpoint that will list all chunks info of a video"""
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = VideoChunkSerializer
 
     def get_queryset(self):
@@ -119,3 +123,28 @@ class GetVideoChunk(generics.ListAPIView):
             return Response(
                 {"details": 'error'},
                 status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangeAudio(generics.RetrieveUpdateAPIView):
+    """End point to change audio of a particular chunk"""
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsContributor]
+    serializer_class = ChangeAudioSerializer
+    queryset = VideoChunk.objects.all()
+
+    def get_object(self):
+        """it will return chunk with provided arguments"""
+        try:
+            return VideoChunk.objects.get(VideoTutorial=self.kwargs['pk'],
+                                          chunk_no=self.kwargs['chunk_no'])
+        except VideoChunk.DoesNotExist:
+            raise Http404
+
+    def update(self, request, *args, **kwargs):
+        """it will upload the new audio of specified chunk"""
+        instance = self.get_object()
+        instance.audio_chunk = request.data.get('audio_chunk')
+        instance.save()
+        serializer = ChangeAudioSerializer(instance)
+        new_audio_trim.delay(serializer.data)
+        return Response(serializer.data)

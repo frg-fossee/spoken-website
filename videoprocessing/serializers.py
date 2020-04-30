@@ -65,10 +65,6 @@ class VideoChunkSerializer(serializers.ModelSerializer):
 
 class ChangeAudioSerializer(serializers.ModelSerializer):
     """Serializer to upload new audio for a particular chunk"""
-    audio_chunk = serializers.SerializerMethodField('get_audio_chunk')
-
-    def get_audio_chunk(self, obj):
-        return obj.audio_chunk.url
 
     class Meta:
         model = VideoChunk
@@ -79,13 +75,12 @@ class ChangeAudioSerializer(serializers.ModelSerializer):
             'start_time',
             'end_time',
             'subtitle',
-            'VideoSubmission'
+            'VideoTutorial'
         ]
         read_only_fields = [
             'chunk_no',
             # 'video_chunk',
             'start_time',
             'end_time',
-            'subtitle',
-            'VideoSubmission'
+            'VideoTutorial'
         ]
