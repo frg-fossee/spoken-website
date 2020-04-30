@@ -12,7 +12,7 @@ from creation.models import ContributorRole, TutorialDetail, Language
 from videoprocessing.models import VideoTutorial, VideoChunk
 from videoprocessing.permissions import is_tutorial_allotted, IsContributor
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer
-from videoprocessing.tasks import process_video, copy_video_generate_checksum
+from videoprocessing.tasks import copy_video_generate_checksum
 
 
 def index(request):
@@ -59,33 +59,26 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """creating a new project"""
-        tutorial_id = self.kwargs['tutorial_id']
-        language_id = self.kwargs['language_id']
-        print('check')
-        if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
-            tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
-            foss_id = tutorial_detail_object.foss_id
-            tutorial_name = str(tutorial_detail_object)
-            tutorial_name = tutorial_name.replace(" ", '-')
-            language_object = Language.objects.get(pk=language_id)
-            language_name = language_object.name
-            file_name = tutorial_name + '-' + language_name
-            src = str(settings.MEDIA_ROOT + 'videos/' + str(foss_id) + '/' + str(tutorial_id) + '/' + file_name)
-            print(src)
-            video_tutorial_object = VideoTutorial(
-                tutorial_detail=tutorial_detail_object,
-                language=language_object,
-                user=self.request.user
-            )
-            video_tutorial_object.save()
-            copy_video_generate_checksum.delay(video_tutorial_object.id, src)
-            return Response({'id': video_tutorial_object.id}, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        # serializer = VideoSerializer(data=request.data)
-        # if serializer.is_valid():
-        #     obj = serializer.save()
-        #     # process_video.delay(obj.id)
+        try:
+            tutorial_id = request.data['tutorial_detail']
+            language_id = request.data['language']
+            if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
+                tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
+                foss_id = tutorial_detail_object.foss_id
+                tutorial_name = str(tutorial_detail_object).replace(" ", '-')
+                language_name = str(Language.objects.get(pk=language_id).name)
+                file_name = tutorial_name + '-' + language_name
+                src = str(settings.MEDIA_ROOT + 'videos/' + str(foss_id) + '/' + str(tutorial_id) + '/' + file_name)
+                print(src)
+                serializer = VideoSerializer(data=request.data)
+                if serializer.is_valid():
+                    obj = serializer.save(user=request.user)
+                    copy_video_generate_checksum.delay(obj.id, src)
+                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        except KeyError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetVideoChunk(generics.ListAPIView):

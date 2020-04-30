@@ -31,12 +31,10 @@ class ContributorTutorialsSerializer(serializers.ModelSerializer):
     foss_category = FossCategorySerializer(read_only=True)
     language = LanguageSerializer(read_only=True)
     tutorial_detail = TutorialDetailSerializer(read_only=True)
-    pratik = serializers.CharField(allow_null=True, default=None)
 
     class Meta:
         model = ContributorRole
-        fields = ('foss_category', 'tutorial_detail', 'language', 'pratik')
-        write_only_fields = ('pratik',)
+        fields = ('foss_category', 'tutorial_detail', 'language')
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -46,7 +44,7 @@ class VideoSerializer(serializers.ModelSerializer):
         model = VideoTutorial
         fields = ['id', 'checksum', 'status', 'tutorial_detail', 'language',
                   'video', 'subtitle', 'total_chunks', 'processed_video']
-        read_only_fields = ['id', 'checksum', 'status', 'tutorial_detail', 'language',
+        read_only_fields = ['id', 'checksum', 'status',
                             'video', 'subtitle', 'total_chunks', 'processed_video']
 
 
