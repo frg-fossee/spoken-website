@@ -30,7 +30,7 @@ def index(request):
 
 class ContributorTutorialsList(generics.ListAPIView):
     """
-    This view should return a list of all the tutorials allotted to a particular contributor
+    Return a list of all the tutorials allotted to a particular contributor
     """
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsContributor]
@@ -84,15 +84,15 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
 
 
 class GetVideoChunk(generics.ListAPIView):
-    """Endpoint that will list all chunks info of a video"""
+    """Endpoint that will list all chunks of a particular tutorial"""
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = VideoChunkSerializer
 
     def get_queryset(self):
-        """query from chunks who project id is provided as arguments """
         pk = self.kwargs['pk']
         print(pk)
+        # TODO: This is to be refactored
         try:
             uuid_obj = UUID(pk, version=4)
             print(uuid_obj)
@@ -139,6 +139,8 @@ class ChangeAudio(generics.RetrieveUpdateAPIView):
                                           chunk_no=self.kwargs['chunk_no'])
         except VideoChunk.DoesNotExist:
             raise Http404
+        except ValidationError:
+            raise exceptions.ValidationError('Invalid UUID Or Chunk No')
 
     def update(self, request, *args, **kwargs):
         """it will upload the new audio of specified chunk"""

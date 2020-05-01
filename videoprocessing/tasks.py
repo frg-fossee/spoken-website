@@ -22,6 +22,9 @@ AUDIO_FILE_EXTENSION = '.mp3'
 SUBTITLE_FILE_EXTENSION = '.srt'
 CHUNKS_LIST_FILE_NAME = 'compiled_video_list.txt'
 
+AUDIO_SAMPLE_RATE = '44100'
+AUDIO_BIT_RATE = '99k'
+
 
 def repl(m):
     return m.group() + ',000'
@@ -80,6 +83,8 @@ def process_video(video_id):
     fp.write(x)
     fp.close()
     compile_video_list = open(CHUNKS_DIRECTORY + '/' + CHUNKS_LIST_FILE_NAME, 'w+')
+    temp = open(CHUNKS_DIRECTORY + '/' + 'temp.txt', 'w+')
+
     subs = pysrt.open(SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='iso-8859-1')
     VideoTutorial.objects.filter(pk=video_id).update(total_chunks=len(subs))
 
@@ -91,7 +96,9 @@ def process_video(video_id):
     os.system(
         'ffmpeg -i ' +
         VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
-        ' -ab 160k -ac 2 -ar 44100 -vn ' +
+        ' -ab ' + AUDIO_BIT_RATE +
+        ' -ar ' + AUDIO_SAMPLE_RATE +
+        ' -vn ' +
         AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION)
 
     for i in range(len(subs)):
@@ -110,10 +117,11 @@ def process_video(video_id):
                 " -c copy " + nos_audio_file_name)
             os.system(command)
             compile_video_list.write("file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + "'\n")
+            temp.write("file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + '00:00:00.000' + " => " + start_time + "'\n")
 
-        if (i != len(subs) - 1) and (i != 0):
-            nos_start_time = str(subs[i].end).replace(',', '.')
-            nos_end_time = str(subs[i + 1].start).replace(',', '.')
+        if i != 0:
+            nos_start_time = str(subs[i - 1].end).replace(',', '.')
+            nos_end_time = str(subs[i].start).replace(',', '.')
             if nos_start_time != nos_end_time:
                 command = str("ffmpeg -i " +
                               AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
@@ -124,6 +132,8 @@ def process_video(video_id):
                               nos_audio_file_name)
                 os.system(command)
                 compile_video_list.write("file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + "'\n")
+                temp.write(
+                    "file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + nos_start_time + " => " + nos_end_time + "'\n")
 
         audio_file_name = chunk_directory + "/" + str(i) + AUDIO_FILE_EXTENSION
         command = str("ffmpeg -i " +
@@ -133,6 +143,7 @@ def process_video(video_id):
                       " -to " + end_time + " -c copy " + audio_file_name)
         os.system(command)
         compile_video_list.write("file '" + str(i) + AUDIO_FILE_EXTENSION + "'\n")
+        temp.write("file '" + str(i) + AUDIO_FILE_EXTENSION + start_time + " => " + end_time + "'\n")
 
         VideoChunk.objects.create(
             chunk_no=i,
@@ -145,16 +156,20 @@ def process_video(video_id):
         )
 
         if i == len(subs) - 1:
+            nos_audio_file_name = chunk_directory + "/" + 'h_' + str(i+1) + AUDIO_FILE_EXTENSION
             command = str(
                 "ffmpeg -i " +
                 AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                 " -ss " + end_time +
                 " -c copy " + nos_audio_file_name)
             os.system(command)
-            compile_video_list.write("file '" + 'h_' + str(i) + AUDIO_FILE_EXTENSION + "'\n")
-    compile_video_list.close()
+            compile_video_list.write("file '" + 'h_' + str(i+1) + AUDIO_FILE_EXTENSION + "'\n")
+            temp.write("file '" + 'final.mp3' + end_time + "'\n")
 
-    compile_all_chunks(video_id)
+    compile_video_list.close()
+    temp.close()
+
+    # compile_all_chunks(video_id)
 
 
 @shared_task
@@ -173,7 +188,10 @@ def new_audio_trim(chunk):
     chunk_directory = os.path.join(folder_path, CHUNKS_DIRECTORY)
     os.chdir(chunk_directory)
     os.rename(chunk_file, 'temp.mp3')
-    os.system('ffmpeg -i temp.mp3 -ab 160k -ac 2 -ar 44100 temp1.mp3')
+    os.system('ffmpeg -i temp.mp3 ' +
+              '-ab ' + AUDIO_BIT_RATE +
+              '-ar ' + AUDIO_SAMPLE_RATE +
+              'temp1.mp3 ')
     command = str("ffmpeg -y -i temp1.mp3 -ss 00:00:00.000 " +
                   " -to " + str(diff) +
                   " -c copy " + chunk_file)
@@ -196,7 +214,7 @@ def compile_all_chunks(video_id):
 
     command = 'ffmpeg -y -f concat -safe 0 -i ' + \
               CHUNKS_LIST_FILE_NAME + \
-              ' -c copy ' + audio_filename
+              ' ' + audio_filename
 
     os.system(command)
 
