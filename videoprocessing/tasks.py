@@ -72,7 +72,18 @@ def process_video(video_id):
     """
     folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
     os.chdir(folder_path)
-
+    os.system(
+        'ffmpeg -i ' +
+        VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
+        ' -c copy -an ' +
+        VIDEO_WITHOUT_AUDIO_FILE_NAME + VIDEO_FILE_EXTENSION)
+    os.system(
+        'ffmpeg -i ' +
+        VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
+        ' -ab ' + AUDIO_BIT_RATE +
+        ' -ar ' + AUDIO_SAMPLE_RATE +
+        ' -vn ' +
+        AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION)
     chunk_directory = os.path.join(folder_path, CHUNKS_DIRECTORY)
     os.mkdir(chunk_directory)
     fp = open(SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, 'r')
@@ -87,19 +98,6 @@ def process_video(video_id):
 
     subs = pysrt.open(SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='iso-8859-1')
     VideoTutorial.objects.filter(pk=video_id).update(total_chunks=len(subs))
-
-    os.system(
-        'ffmpeg -i ' +
-        VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
-        ' -c copy -an ' +
-        VIDEO_WITHOUT_AUDIO_FILE_NAME + VIDEO_FILE_EXTENSION)
-    os.system(
-        'ffmpeg -i ' +
-        VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
-        ' -ab ' + AUDIO_BIT_RATE +
-        ' -ar ' + AUDIO_SAMPLE_RATE +
-        ' -vn ' +
-        AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION)
 
     for i in range(len(subs)):
         sub_text = str(subs[i].text)
@@ -156,20 +154,20 @@ def process_video(video_id):
         )
 
         if i == len(subs) - 1:
-            nos_audio_file_name = chunk_directory + "/" + 'h_' + str(i+1) + AUDIO_FILE_EXTENSION
+            nos_audio_file_name = chunk_directory + "/" + 'h_' + str(i + 1) + AUDIO_FILE_EXTENSION
             command = str(
                 "ffmpeg -i " +
                 AUDIO_FILE_NAME + AUDIO_FILE_EXTENSION +
                 " -ss " + end_time +
                 " -c copy " + nos_audio_file_name)
             os.system(command)
-            compile_video_list.write("file '" + 'h_' + str(i+1) + AUDIO_FILE_EXTENSION + "'\n")
+            compile_video_list.write("file '" + 'h_' + str(i + 1) + AUDIO_FILE_EXTENSION + "'\n")
             temp.write("file '" + 'final.mp3' + end_time + "'\n")
 
     compile_video_list.close()
     temp.close()
 
-    # compile_all_chunks(video_id)
+    compile_all_chunks(video_id)
 
 
 @shared_task
@@ -190,14 +188,35 @@ def new_audio_trim(chunk):
     os.rename(chunk_file, 'temp.mp3')
     os.system('ffmpeg -i temp.mp3 ' +
               '-ab ' + AUDIO_BIT_RATE +
-              '-ar ' + AUDIO_SAMPLE_RATE +
-              'temp1.mp3 ')
-    command = str("ffmpeg -y -i temp1.mp3 -ss 00:00:00.000 " +
-                  " -to " + str(diff) +
-                  " -c copy " + chunk_file)
+              ' -ar ' + AUDIO_SAMPLE_RATE +
+              ' temp1.mp3 ')
+    # getting the length of audio
+    audio_length_format = '%H:%M:%S.%f'
+    audio_length_str = str(os.popen(
+        "ffprobe -v error -sexagesimal -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 temp1.mp3") \
+                           .read())
+    audio_length_str = audio_length_str.rstrip()
+    audio_len = datetime.strptime(audio_length_str, audio_length_format)
+    if audio_len < diff:
+        # add some silence
+        abs_diff = str(abs(datetime.strptime(end_time, audio_length_format) - datetime.strptime(start_time,
+                                                                                                audio_length_format) - audio_len))
+        os.system(
+            "ffmpeg -f lavfi -i anullsrc=sample_rate=48000 -ab " + AUDIO_BIT_RATE + " -t " + abs_diff + " silence.mp3")
+        os.system('ffmpeg -y -i "concat:temp1.mp3|silence.mp3" -acodec copy temp2.mp3')
+        command = str("ffmpeg -y -i temp2.mp3 -ss 00:00:00.000 " +
+                      " -to " + str(diff) +
+                      " -c copy " + chunk_file)
+
+    else:
+        command = str("ffmpeg -y -i temp1.mp3 -ss 00:00:00.000 " +
+                      " -to " + str(diff) +
+                      " -c copy " + chunk_file)
     os.system(command)
     os.remove('temp.mp3')
     os.remove('temp1.mp3')
+    if os.path.exists('temp2.mp3'):
+        os.remove('temp2.mp3')
 
     compile_all_chunks(video_id)
 
@@ -220,7 +239,7 @@ def compile_all_chunks(video_id):
 
     command = 'ffmpeg -y -i ../' + \
               VIDEO_WITHOUT_AUDIO_FILE_NAME + VIDEO_FILE_EXTENSION + \
-              ' -i ' + audio_filename + ' -c copy -shortest ' + video_filename
+              ' -i ' + audio_filename + ' -c copy ' + video_filename
     os.system(command)
 
     file_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, CHUNKS_DIRECTORY, video_filename)
