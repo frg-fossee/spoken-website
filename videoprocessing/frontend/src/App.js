@@ -1,10 +1,12 @@
 import React from 'react';
 import './App.css';
-import SimpleTable from './components/TutorialsList/TutorialsList.component'
+import {Button} from 'antd'
+import {PlusCircleFilled} from '@ant-design/icons'
 function App() {
   return (
     <div className="App">
-      <SimpleTable/>
+         <Button type="primary" icon={<PlusCircleFilled/>}>Button</Button>
+
     </div>
   );
 }
