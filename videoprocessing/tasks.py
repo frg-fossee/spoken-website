@@ -196,11 +196,15 @@ def new_audio_trim(chunk):
         "ffprobe -v error -sexagesimal -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 temp1.mp3") \
                            .read())
     audio_length_str = audio_length_str.rstrip()
-    audio_len = datetime.strptime(audio_length_str, audio_length_format)
-    if audio_len < diff:
+    audio_start_time = start_time + '.000000'
+    audio_end_time = end_time + '.000000'
+    audio_len = datetime.strptime(audio_length_str, audio_length_format) - datetime.strptime("00:00:00.000000",
+                                                                                             audio_length_format)
+    audio_diff = datetime.strptime(audio_end_time, audio_length_format) - datetime.strptime(audio_start_time,
+                                                                                            audio_length_format)
+    if audio_len < audio_diff:
         # add some silence
-        abs_diff = str(abs(datetime.strptime(end_time, audio_length_format) - datetime.strptime(start_time,
-                                                                                                audio_length_format) - audio_len))
+        abs_diff = str(abs(audio_diff - audio_len))
         os.system(
             "ffmpeg -f lavfi -i anullsrc=sample_rate=48000 -ab " + AUDIO_BIT_RATE + " -t " + abs_diff + " silence.mp3")
         os.system('ffmpeg -y -i "concat:temp1.mp3|silence.mp3" -acodec copy temp2.mp3')
