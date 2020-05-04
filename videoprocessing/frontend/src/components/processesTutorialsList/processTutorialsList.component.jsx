@@ -42,8 +42,8 @@ class ProcessedTutorials extends React.Component {
                         sm: 2,
                         md: 4,
                         lg: 4,
-                        xl: 6,
-                        xxl: 6,
+                        xl: 4,
+                        xxl: 4,
                     }} dataSource={this.state.processedTutorials}
                     renderItem={item => (
                         <List.Item>

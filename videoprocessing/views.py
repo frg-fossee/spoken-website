@@ -65,6 +65,10 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
             tutorial_id = request.data['tutorial_detail']
             language_id = request.data['language']
             if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
+
+                # if VideoTutorial.objects.filter(tutorial_detail=tutorial_id):
+                #     return Response(status=status.HTTP_409_CONFLICT)
+
                 tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
                 foss_id = tutorial_detail_object.foss_id
                 tutorial_name = str(tutorial_detail_object).replace(" ", '-')
