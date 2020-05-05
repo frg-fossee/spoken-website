@@ -2,6 +2,11 @@
 {% load static %}
 
 {% block cssblock %}
+  <style type="text/css">
+  #search-wrapper{
+    display: none;
+  }
+  </style>
 <link rel="stylesheet" href="{% static 'videoprocessing/css/2.989450fd.chunk.css'%}">
 <link rel="stylesheet" href="{% static 'videoprocessing/css/main.40b2a4c7.chunk.css'%}">
 {% endblock %}
@@ -14,7 +19,7 @@
       for (p && p(r); s.length;) s.shift()();
       return u.push.apply(u, a || []), t()
     }
-  
+
     function t() {
       for (var e, r = 0; r < u.length; r++) {
         for (var t = u[r], n = !0, l = 1; l < t.length; l++) {
@@ -25,15 +30,15 @@
       }
       return e
     }
-  
+
     var n = {}, o = {1: 0}, u = [];
-  
+
     function f(r) {
       if (n[r]) return n[r].exports;
       var t = n[r] = {i: r, l: !1, exports: {}};
       return e[r].call(t.exports, t, t.exports, f), t.l = !0, t.exports
     }
-  
+
     f.m = e, f.c = n, f.d = function (e, r, t) {
       f.o(e, r) || Object.defineProperty(e, r, {enumerable: !0, get: t})
     }, f.r = function (e) {
