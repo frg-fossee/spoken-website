@@ -1,6 +1,7 @@
 import React from "react";
 import axios from 'axios'
-import {Col, Row, Select, Table, Typography} from 'antd';
+import {Button, Col, Row, Select, Table, Typography} from 'antd';
+import {EditOutlined} from '@ant-design/icons'
 
 const {Option} = Select;
 const {Text} = Typography
@@ -9,6 +10,10 @@ const columns = [
         title: 'Tutorial Name',
         dataIndex: 'tutorial',
         key: 'tutorial',
+        sorter: {
+            compare: (a, b) => a.tutorial - b.tutorial,
+            multiple: 3,
+        }
     },
     {
         title: 'FOSS',
@@ -19,6 +24,10 @@ const columns = [
         title: 'Language',
         dataIndex: 'language',
         key: 'language',
+    }, {
+        title: 'Edit Video',
+        dataIndex: 'button',
+        key: 'button',
     },
 ];
 
@@ -40,20 +49,23 @@ class TutorialsListComponent extends React.Component {
 
 
     async filterFosses(value, option) {
-        if (value === 'All'){
+        console.log(value)
+        if (value === 'All') {
             let all = this.state.tutorials
+            console.log(all)
 
             this.setState({filteredTutorials: all, isTutDisabled: false, tutorialsInTable: all})
+        } else {
+            let tuts = this.state.tutorials
+            tuts = await tuts.filter((item) => {
+                return item.foss === value
+            })
+            console.log(tuts)
+            this.setState({filteredTutorials: tuts, isTutDisabled: false, tutorialsInTable: tuts})
         }
-        let tuts = this.state.tutorials
-        tuts = await tuts.filter((item) => {
-            return item.foss === value
-        })
-        console.log(tuts)
-        this.setState({filteredTutorials: tuts, isTutDisabled: false, tutorialsInTable: tuts})
     }
 
-    async filterTutorials(value, option){
+    async filterTutorials(value, option) {
         let tuts = this.state.filteredTutorials
         tuts = await tuts.filter((item) => {
             return item.tutorial === value
@@ -65,10 +77,17 @@ class TutorialsListComponent extends React.Component {
 
     renderAllFosses() {
         let options = new Set()
+        let optionRender = []
         this.state.tutorials.map((item) => {
-            options.add(<Option value={item.foss}>{item.foss}</Option>)
+            options.add(item.foss)
         })
-        return options
+        options = Array.from(options)
+        options.map((item) => {
+            optionRender.push(<Option value={item}>{item}</Option>)
+        })
+
+        return optionRender
+
     }
 
     componentDidMount() {
@@ -83,10 +102,11 @@ class TutorialsListComponent extends React.Component {
                     let tut_obj = {};
                     tut_obj.foss = tutorial.foss_category.name
                     tut_obj.tutorial = tutorial.tutorial_detail.tutorial
-                    tut_obj.language = tutorial.language.name
+                    tut_obj.language = <Select defaultValue={tutorial.language.name}><Option value={tutorial.language.name}>{tutorial.language.name}</Option></Select>
                     tut_obj.isEdited = false
                     tut_obj.tutorial_id = tutorial.tutorial_detail.id
                     tut_obj.language_id = tutorial.language.id
+                    tut_obj.button = <Button size={'large'} icon={<EditOutlined/>}>Edit Video</Button>
                     filtered_tuts.push(tut_obj)
                     fosses.add(tut_obj.foss)
                     tutorials.add(tut_obj.tutorial)
@@ -103,6 +123,8 @@ class TutorialsListComponent extends React.Component {
                         for (let i = 0; i < filtered_tuts.length; i++) {
                             if (filtered_tuts[i].tutorial_id === tut.tutorial_detail && filtered_tuts[i].language_id === tut.language) {
                                 filtered_tuts[i].isEdited = true
+                                filtered_tuts[i].button =
+                                    <Button size={'large'} disabled icon={<EditOutlined/>}>Edited</Button>
                             }
                         }
                     })
@@ -126,42 +148,39 @@ class TutorialsListComponent extends React.Component {
         return (
             <div>
 
-            <Row justify="start" gutter={[24, 8]}>
-                <Col span={2} offset={6}> <Text>
-                    FOSS
-                </Text>
-                </Col>
-                <Col span={2}>
-                    <Select onChange={this.filterFosses} defaultValue="All" style={{width: 120}}>
-                        <Option value='All'>All</Option>
-                        {
-                            this.renderAllFosses()
-                        }
-                    </Select>
-                </Col>
-                <Col span={2}>
-                    <Text>
-                        Tutorial
-                    </Text>
-                </Col>
-                <Col span={2}>
-                    <Select allowClear disabled={this.state.isTutDisabled} defaultValue="All" style={{width: 120}} onChange={this.filterTutorials}>
-                        <Option value='All'>All</Option>
-                        {
-                            this.state.filteredTutorials.map((item)=>{
-                                return <Option value={item.tutorial}>{item.tutorial}</Option>
-                            })
+                <Row gutter={[24, 8]}>
+                    <Col  style={{textAlign: 'center'}} span={12} offset={6}>
+                        <Text level={4}>
+                            FOSS &nbsp; &nbsp; &nbsp;
+                        </Text>
+                        <Select size='large' onChange={this.filterFosses} defaultValue="All" style={{width: 120}}>
+                            <Option value='All'>All</Option>
+                            {
+                                this.renderAllFosses()
+                            }
+                        </Select>
+                        <Text level={3}>
+                            &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Tutorial  &nbsp; &nbsp; &nbsp;
+                        </Text>
+                        <Select size='large' allowClear disabled={this.state.isTutDisabled} defaultValue="All"
+                                style={{width: 120}}
+                                onChange={this.filterTutorials}>
+                            <Option value='All'>All</Option>
+                            {
+                                this.state.filteredTutorials.map((item) => {
+                                    return <Option value={item.tutorial}>{item.tutorial}</Option>
+                                })
 
-                        }
-                    </Select>
+                            }
+                        </Select>
                 </Col>
             </Row>
-        <Table dataSource={this.state.tutorialsInTable} columns={columns} />;
-            </div>
+        <Table loading={this.state.isLoading} dataSource={this.state.tutorialsInTable} columns={columns}/>
+    </div>
 
 
     );
     }
-}
+    }
 
-export default TutorialsListComponent
+    export default TutorialsListComponent
