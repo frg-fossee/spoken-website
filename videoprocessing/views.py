@@ -32,8 +32,8 @@ class ContributorTutorialsList(generics.ListAPIView):
     """
     Return a list of all the tutorials allotted to a particular contributor
     """
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated, IsContributor]
+    # authentication_classes = [SessionAuthentication]
+    # permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = ContributorTutorialsSerializer
 
     def get_queryset(self):
@@ -46,8 +46,8 @@ class ContributorTutorialsList(generics.ListAPIView):
 
 
 class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated, IsContributor]
+    # authentication_classes = [SessionAuthentication]
+    # permission_classes = [IsAuthenticated, IsContributor]
     serializer_class = VideoSerializer
 
     def get_queryset(self):
