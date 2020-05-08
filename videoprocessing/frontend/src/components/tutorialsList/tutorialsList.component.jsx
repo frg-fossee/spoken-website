@@ -1,29 +1,31 @@
 import React from "react";
 import axios from 'axios'
-import {Button, Col, Row, Select, Table, Typography} from 'antd';
-import {EditOutlined} from '@ant-design/icons'
+import {Button, Col, Input, Row, Select, Table, Typography} from 'antd';
+import {EditOutlined,SearchOutlined,EyeOutlined} from '@ant-design/icons'
 
 const {Option} = Select;
 const {Text} = Typography
 const columns = [
     {
-        title: 'Tutorial Name',
-        dataIndex: 'tutorial',
-        key: 'tutorial',
-        sorter: {
-            compare: (a, b) => a.tutorial - b.tutorial,
-            multiple: 3,
-        }
-    },
-    {
         title: 'FOSS',
         dataIndex: 'foss',
         key: 'foss',
+        sorter: (a, b) => a.foss.localeCompare(b.foss),
+        sortDirections: ['descend', 'ascend']
+    },
+    {
+        title: 'Tutorial Name',
+        dataIndex: 'tutorial',
+        key: 'tutorial',
+        sorter: (a, b) => a.tutorial.localeCompare(b.tutorial),
+        sortDirections: ['descend', 'ascend']
     },
     {
         title: 'Language',
         dataIndex: 'language',
         key: 'language',
+        sorter: (a, b) => a.language.localeCompare(b.language),
+        sortDirections: ['descend', 'ascend']
     }, {
         title: 'Edit Video',
         dataIndex: 'button',
@@ -38,12 +40,17 @@ class TutorialsListComponent extends React.Component {
             tutorials: [],
             filteredTutorials: [],
             tutorialsInTable: [],
+            searchFilteredTable: [],
             isLoading: true,
-            isTutDisabled: true
+            isTutDisabled: true,
+            fossDropdownOption: 'All',
+            tutorialDropdownOption: 'All',
+            searchBox: ''
         }
         this.filterFosses = this.filterFosses.bind(this)
         this.filterTutorials = this.filterTutorials.bind(this)
-        this.renderAllFosses = this.renderAllFosses.bind(this);
+        this.renderOptions = this.renderOptions.bind(this);
+        this.searchTable = this.searchTable.bind(this);
 
     }
 
@@ -54,32 +61,52 @@ class TutorialsListComponent extends React.Component {
             let all = this.state.tutorials
             console.log(all)
 
-            this.setState({filteredTutorials: all, isTutDisabled: false, tutorialsInTable: all})
+            this.setState({
+                fossDropdownOption: 'All',
+                filteredTutorials: all,
+                isTutDisabled: true,
+                tutorialsInTable: all,
+                tutorialDropdownOption: 'All'
+            })
         } else {
             let tuts = this.state.tutorials
             tuts = await tuts.filter((item) => {
                 return item.foss === value
             })
             console.log(tuts)
-            this.setState({filteredTutorials: tuts, isTutDisabled: false, tutorialsInTable: tuts})
+            this.setState({
+                fossDropdownOption: value,
+                filteredTutorials: tuts,
+                isTutDisabled: false,
+                tutorialsInTable: tuts
+            })
         }
     }
 
     async filterTutorials(value, option) {
-        let tuts = this.state.filteredTutorials
-        tuts = await tuts.filter((item) => {
-            return item.tutorial === value
-        })
-        console.log(tuts)
-        this.setState({tutorialsInTable: tuts})
+        if (value === 'All') {
+            let tuts = this.state.filteredTutorials
+            tuts = await tuts.filter((item) => {
+                return item.foss === this.state.fossDropdownOption
+            })
+            this.setState({tutorialsInTable: tuts, tutorialDropdownOption: value})
+
+        } else {
+            let tuts = this.state.filteredTutorials
+            tuts = await tuts.filter((item) => {
+                return item.tutorial === value
+            })
+            console.log(tuts)
+            this.setState({tutorialsInTable: tuts, tutorialDropdownOption: value})
+        }
     }
 
 
-    renderAllFosses() {
+    renderOptions(type) {
         let options = new Set()
         let optionRender = []
         this.state.tutorials.map((item) => {
-            options.add(item.foss)
+            options.add(type === 'foss' ? item.foss : item.tutorial)
         })
         options = Array.from(options)
         options.map((item) => {
@@ -90,6 +117,18 @@ class TutorialsListComponent extends React.Component {
 
     }
 
+    async searchTable(e){
+        let value = e.target.value
+        let filteredList = this.state.tutorialsInTable
+        filteredList = await filteredList.filter(item => {
+            let booltut = item.tutorial.toLowerCase().includes(value.toLowerCase())
+            let boolfoss = item.foss.toLowerCase().includes(value.toLowerCase())
+            let boollang = item.language.toLowerCase().includes(value.toLowerCase())
+            return booltut || boollang || boolfoss
+        })
+        this.setState({searchFilteredTable: filteredList,searchBox:value})
+
+    }
     componentDidMount() {
         let filtered_tuts = []
         let fosses = new Set()
@@ -102,7 +141,7 @@ class TutorialsListComponent extends React.Component {
                     let tut_obj = {};
                     tut_obj.foss = tutorial.foss_category.name
                     tut_obj.tutorial = tutorial.tutorial_detail.tutorial
-                    tut_obj.language = <Select defaultValue={tutorial.language.name}><Option value={tutorial.language.name}>{tutorial.language.name}</Option></Select>
+                    tut_obj.language = tutorial.language.name
                     tut_obj.isEdited = false
                     tut_obj.tutorial_id = tutorial.tutorial_detail.id
                     tut_obj.language_id = tutorial.language.id
@@ -124,7 +163,7 @@ class TutorialsListComponent extends React.Component {
                             if (filtered_tuts[i].tutorial_id === tut.tutorial_detail && filtered_tuts[i].language_id === tut.language) {
                                 filtered_tuts[i].isEdited = true
                                 filtered_tuts[i].button =
-                                    <Button size={'large'} disabled icon={<EditOutlined/>}>Edited</Button>
+                                    <Button size={'large'} icon={<EyeOutlined />}>View</Button>
                             }
                         }
                     })
@@ -148,39 +187,51 @@ class TutorialsListComponent extends React.Component {
         return (
             <div>
 
-                <Row gutter={[24, 8]}>
-                    <Col  style={{textAlign: 'center'}} span={12} offset={6}>
+                <Row xs={2} sm={4} md={6} lg={10} xl={10}>
+                    <Col span={6} offset={1}>
                         <Text level={4}>
                             FOSS &nbsp; &nbsp; &nbsp;
                         </Text>
-                        <Select size='large' onChange={this.filterFosses} defaultValue="All" style={{width: 120}}>
+                        <Select
+                            value={this.state.fossDropdownOption}
+                            size='large'
+                            onChange={this.filterFosses}
+                            defaultValue="All"
+                            style={{width: 120}}>
                             <Option value='All'>All</Option>
                             {
-                                this.renderAllFosses()
+                                this.renderOptions('foss')
                             }
                         </Select>
+                    </Col>
+                    <Col span={6}>
                         <Text level={3}>
-                            &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Tutorial  &nbsp; &nbsp; &nbsp;
+                           Tutorial  &nbsp; &nbsp; &nbsp;
                         </Text>
-                        <Select size='large' allowClear disabled={this.state.isTutDisabled} defaultValue="All"
+                        <Select value={this.state.tutorialDropdownOption}
+                                size='large'
+                                disabled={this.state.isTutDisabled}
                                 style={{width: 120}}
                                 onChange={this.filterTutorials}>
                             <Option value='All'>All</Option>
                             {
-                                this.state.filteredTutorials.map((item) => {
-                                    return <Option value={item.tutorial}>{item.tutorial}</Option>
-                                })
+                                this.renderOptions('tutorials')
 
                             }
                         </Select>
-                </Col>
-            </Row>
-        <Table loading={this.state.isLoading} dataSource={this.state.tutorialsInTable} columns={columns}/>
-    </div>
+                    </Col>
+                    <Col span={10}>
+                        <Input allowClear size="large" placeholder="Search" prefix={<SearchOutlined/>} onChange={this.searchTable} />
+
+                    </Col>
+                    <Col span={1}/>
+                </Row>
+                <Table loading={this.state.isLoading} dataSource={this.state.searchBox!==''?this.state.searchFilteredTable:this.state.tutorialsInTable} columns={columns}/>
+            </div>
 
 
-    );
+        );
     }
-    }
+}
 
-    export default TutorialsListComponent
+export default TutorialsListComponent
