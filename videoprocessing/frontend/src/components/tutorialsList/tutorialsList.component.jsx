@@ -1,10 +1,11 @@
 import React from "react";
 import axios from 'axios'
-import {Button, Col, Input, Row, Select, Table, Typography} from 'antd';
-import {EditOutlined,SearchOutlined,EyeOutlined} from '@ant-design/icons'
+import {Button, Col, Input, Popconfirm, Row, Select, Table, Typography} from 'antd';
+import {EditOutlined, EyeOutlined, SearchOutlined} from '@ant-design/icons'
 
 const {Option} = Select;
 const {Text} = Typography
+
 const columns = [
     {
         title: 'FOSS',
@@ -34,8 +35,9 @@ const columns = [
 ];
 
 class TutorialsListComponent extends React.Component {
-    constructor() {
-        super();
+
+    constructor(props) {
+        super(props);
         this.state = {
             tutorials: [],
             filteredTutorials: [],
@@ -51,7 +53,18 @@ class TutorialsListComponent extends React.Component {
         this.filterTutorials = this.filterTutorials.bind(this)
         this.renderOptions = this.renderOptions.bind(this);
         this.searchTable = this.searchTable.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+    }
 
+    handleSubmit(tut_id,lang_id){
+        console.log(tut_id,lang_id)
+        const data = new FormData();
+        data.append('tutorial_detail', tut_id);
+        data.append('language', lang_id);
+        axios.post(`${process.env.REACT_APP_API_URL}/process_tutorials`,data)
+            .then((res)=>{
+                console.log(res.data)
+            })
     }
 
 
@@ -117,7 +130,7 @@ class TutorialsListComponent extends React.Component {
 
     }
 
-    async searchTable(e){
+    async searchTable(e) {
         let value = e.target.value
         let filteredList = this.state.tutorialsInTable
         filteredList = await filteredList.filter(item => {
@@ -126,9 +139,10 @@ class TutorialsListComponent extends React.Component {
             let boollang = item.language.toLowerCase().includes(value.toLowerCase())
             return booltut || boollang || boolfoss
         })
-        this.setState({searchFilteredTable: filteredList,searchBox:value})
+        this.setState({searchFilteredTable: filteredList, searchBox: value})
 
     }
+
     componentDidMount() {
         let filtered_tuts = []
         let fosses = new Set()
@@ -145,7 +159,14 @@ class TutorialsListComponent extends React.Component {
                     tut_obj.isEdited = false
                     tut_obj.tutorial_id = tutorial.tutorial_detail.id
                     tut_obj.language_id = tutorial.language.id
-                    tut_obj.button = <Button size={'large'} icon={<EditOutlined/>}>Edit Video</Button>
+                    tut_obj.button =   <Popconfirm   onConfirm={
+                        () => this.handleSubmit(
+                            tutorial.tutorial_detail.id,
+                            tutorial.language.id)
+                    } title="Are you sure?" okText="Yes" cancelText="No">
+                        <Button size={'large'} icon={<EditOutlined/>}
+                                           >Edit
+                            Video</Button></Popconfirm>
                     filtered_tuts.push(tut_obj)
                     fosses.add(tut_obj.foss)
                     tutorials.add(tut_obj.tutorial)
@@ -163,7 +184,7 @@ class TutorialsListComponent extends React.Component {
                             if (filtered_tuts[i].tutorial_id === tut.tutorial_detail && filtered_tuts[i].language_id === tut.language) {
                                 filtered_tuts[i].isEdited = true
                                 filtered_tuts[i].button =
-                                    <Button size={'large'} icon={<EyeOutlined />}>View</Button>
+                                    <Button size={'large'} icon={<EyeOutlined/>}>View</Button>
                             }
                         }
                     })
@@ -186,7 +207,6 @@ class TutorialsListComponent extends React.Component {
 
         return (
             <div>
-
                 <Row xs={2} sm={4} md={6} lg={10} xl={10}>
                     <Col span={6} offset={1}>
                         <Text level={4}>
@@ -206,7 +226,7 @@ class TutorialsListComponent extends React.Component {
                     </Col>
                     <Col span={6}>
                         <Text level={3}>
-                           Tutorial  &nbsp; &nbsp; &nbsp;
+                            Tutorial  &nbsp; &nbsp; &nbsp;
                         </Text>
                         <Select value={this.state.tutorialDropdownOption}
                                 size='large'
@@ -221,12 +241,15 @@ class TutorialsListComponent extends React.Component {
                         </Select>
                     </Col>
                     <Col span={10}>
-                        <Input allowClear size="large" placeholder="Search" prefix={<SearchOutlined/>} onChange={this.searchTable} />
+                        <Input allowClear size="large" placeholder="Search" prefix={<SearchOutlined/>}
+                               onChange={this.searchTable}/>
 
                     </Col>
                     <Col span={1}/>
                 </Row>
-                <Table loading={this.state.isLoading} dataSource={this.state.searchBox!==''?this.state.searchFilteredTable:this.state.tutorialsInTable} columns={columns}/>
+                <Table loading={this.state.isLoading}
+                       dataSource={this.state.searchBox !== '' ? this.state.searchFilteredTable : this.state.tutorialsInTable}
+                       columns={columns}/>
             </div>
 
 
