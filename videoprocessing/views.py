@@ -113,17 +113,23 @@ class GetVideoChunk(generics.ListAPIView):
         pk = self.kwargs['pk']
         print(pk)
         try:
-            video_obj = VideoTutorial.objects.get(pk=pk)
+            video_obj = VideoTutorial.objects.get(pk=pk, user=request.user)
             chunk = VideoChunk.objects.filter(VideoTutorial=pk)
             context = {'request': request}
 
             ser_video = VideoSerializer(video_obj, context=context)
+
+            meta_data = ser_video.data
+            meta_data['tutorial_name'] = str(TutorialDetail.objects.get(pk=video_obj.tutorial_detail.pk))
+            meta_data['language'] = str(Language.objects.get(pk=video_obj.language.pk))
+            meta_data['foss'] = video_obj.tutorial_detail.foss.foss
+
             ser_chunk = VideoChunkSerializer(chunk, many=True, context=context)
 
             return Response({
-                'video_data': ser_video.data,
+                'video_data': meta_data,
                 'chunks': ser_chunk.data})
-        except ValidationError:
+        except (ValidationError, VideoTutorial.DoesNotExist):
             return Response(
                 {"details": 'error'},
                 status=status.HTTP_400_BAD_REQUEST)

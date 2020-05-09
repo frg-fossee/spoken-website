@@ -1,7 +1,8 @@
 import React from "react";
 import axios from 'axios'
-import {Button, Col, Input, Popconfirm, Row, Select, Table, Typography} from 'antd';
+import {Button, Col, Input, notification, Popconfirm, Row, Select, Table, Typography} from 'antd';
 import {EditOutlined, EyeOutlined, SearchOutlined} from '@ant-design/icons'
+import {withRouter} from "react-router-dom";
 
 const {Option} = Select;
 const {Text} = Typography
@@ -56,14 +57,24 @@ class TutorialsListComponent extends React.Component {
         this.handleSubmit = this.handleSubmit.bind(this);
     }
 
-    handleSubmit(tut_id,lang_id){
-        console.log(tut_id,lang_id)
+    handleSubmit(tut_id, lang_id) {
+        console.log(tut_id, lang_id)
         const data = new FormData();
         data.append('tutorial_detail', tut_id);
         data.append('language', lang_id);
-        axios.post(`${process.env.REACT_APP_API_URL}/process_tutorials`,data)
-            .then((res)=>{
+        axios.post(`${process.env.REACT_APP_API_URL}/process_tutorials`, data)
+            .then((res) => {
                 console.log(res.data)
+                this.props.history.push({pathname: '/dashboard', search: `id=${res.data.id}`});
+            })
+            .catch((error) => {
+                notification.error({
+                    message: 'Error Occurred',
+                    description: error.response ? `Status: ${error.response.status} \n ${error.response.statusText}` : 'Some Error Occurred',
+                    onClick: () => {
+                        console.log('Notification Clicked!');
+                    },
+                });
             })
     }
 
@@ -122,8 +133,8 @@ class TutorialsListComponent extends React.Component {
             options.add(type === 'foss' ? item.foss : item.tutorial)
         })
         options = Array.from(options)
-        options.map((item) => {
-            optionRender.push(<Option value={item}>{item}</Option>)
+        options.map((item, index) => {
+            optionRender.push(<Option key={index} value={item}>{item}</Option>)
         })
 
         return optionRender
@@ -153,19 +164,20 @@ class TutorialsListComponent extends React.Component {
                 let data = res.data
                 data.map((tutorial) => {
                     let tut_obj = {};
+                    tut_obj.key = tutorial.tutorial_detail.id
                     tut_obj.foss = tutorial.foss_category.name
                     tut_obj.tutorial = tutorial.tutorial_detail.tutorial
                     tut_obj.language = tutorial.language.name
                     tut_obj.isEdited = false
                     tut_obj.tutorial_id = tutorial.tutorial_detail.id
                     tut_obj.language_id = tutorial.language.id
-                    tut_obj.button =   <Popconfirm   onConfirm={
+                    tut_obj.button = <Popconfirm onConfirm={
                         () => this.handleSubmit(
                             tutorial.tutorial_detail.id,
                             tutorial.language.id)
                     } title="Are you sure?" okText="Yes" cancelText="No">
                         <Button size={'large'} icon={<EditOutlined/>}
-                                           >Edit
+                        >Edit
                             Video</Button></Popconfirm>
                     filtered_tuts.push(tut_obj)
                     fosses.add(tut_obj.foss)
@@ -247,7 +259,8 @@ class TutorialsListComponent extends React.Component {
                     </Col>
                     <Col span={1}/>
                 </Row>
-                <Table loading={this.state.isLoading}
+                <Table scroll={{y: 'calc(100vh - 4em)'}}
+                       loading={this.state.isLoading}
                        dataSource={this.state.searchBox !== '' ? this.state.searchFilteredTable : this.state.tutorialsInTable}
                        columns={columns}/>
             </div>
@@ -257,4 +270,4 @@ class TutorialsListComponent extends React.Component {
     }
 }
 
-export default TutorialsListComponent
+export default withRouter(TutorialsListComponent)
