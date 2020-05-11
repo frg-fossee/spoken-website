@@ -129,9 +129,16 @@ class TutorialsListComponent extends React.Component {
     renderOptions(type) {
         let options = new Set()
         let optionRender = []
-        this.state.tutorials.map((item) => {
-            options.add(type === 'foss' ? item.foss : item.tutorial)
-        })
+        if(type==='foss'){
+            this.state.tutorials.map((item) => {
+                options.add(item.foss)
+            })
+        }else{
+            this.state.filteredTutorials.map((item) => {
+                options.add(item.tutorial)
+            })
+        }
+
         options = Array.from(options)
         options.map((item, index) => {
             optionRender.push(<Option key={index} value={item}>{item}</Option>)
