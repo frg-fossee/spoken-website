@@ -60,7 +60,7 @@ def copy_video_generate_checksum(video_id, file_path):
         process_video.delay(video_id)
     except FileNotFoundError:
         VideoTutorial.objects.filter(pk=video_id).update(
-            status='subtitle_not_found'
+            status='media_not_found'
         )
 
 
