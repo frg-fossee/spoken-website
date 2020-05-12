@@ -2,25 +2,50 @@ import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
 import axios from 'axios'
-import {Button, Col, Modal, notification, Progress, Row, Space, Spin, Table, Typography} from "antd";
+import {
+    Breadcrumb,
+    Button,
+    Col,
+    Divider,
+    Input,
+    Modal,
+    notification,
+    Progress, Result,
+    Row,
+    Space,
+    Spin,
+    Table,
+    Typography
+} from "antd";
 import ReactAudioPlayer from 'react-audio-player';
 import ReactPlayer from "react-player";
-import {AudioOutlined, InboxOutlined, DownloadOutlined} from '@ant-design/icons'
+import {
+    AudioOutlined,
+    LoadingOutlined,
+    InboxOutlined,
+    DownloadOutlined,
+    HomeOutlined,
+    VideoCameraOutlined
+} from '@ant-design/icons'
 import {Upload, message} from 'antd';
+import MediaNotFound from "../../components/errors/mediaNotFound";
+import Error403Component from "../../components/errors/error403.component";
+import './dashboard.page.css'
 
 const {Dragger} = Upload;
 const {Title, Text} = Typography;
 
 
 class Dashboard extends React.Component {
+    warning
+
     constructor(props) {
         super(props);
         this.state = {
-            loading: true,
             id: '',
             current_count: '',
             chunks: [],
-            status: '',
+            status: 'loading',
             checksum: '',
             foss: '',
             tutorial_name: '',
@@ -29,24 +54,25 @@ class Dashboard extends React.Component {
             processed_video: '',
             processed: false,
             progress_status: '',
-            visible: false
+            visible: false,
+            audio_file: '',
+            uploading: false,
+            selected_chunk: 0
         }
-        this.config = {
-            name: 'file',
-            multiple: true,
-            action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-            onChange(info) {
-                const {status} = info.file;
-                if (status !== 'uploading') {
-                    console.log(info.file, info.fileList);
-                }
-                if (status === 'done') {
-                    message.success(`${info.file.name} file uploaded successfully.`);
-                } else if (status === 'error') {
-                    message.error(`${info.file.name} file upload failed.`);
-                }
-            },
-        }
+        this.handleUpload = () => {
+            const {audio_file} = this.state;
+            console.log(audio_file)
+            const formData = new FormData();
+            formData.append('files[]', audio_file);
+
+            this.setState({
+                uploading: true,
+            });
+            //to do
+
+
+        };
+
         this.columns = [
             {
                 title: 'Chunk No.',
@@ -86,15 +112,17 @@ class Dashboard extends React.Component {
             },
             {
                 title: 'Change Audio',
-                render: () => {
-                    return (<Button icon={<AudioOutlined/>} onClick={this.showModal}>Change Audio</Button>
+                render: (value) => {
+                    return (<Button icon={<AudioOutlined/>} onClick={() => this.showModal(value.chunk_no)}>Change
+                            Audio</Button>
                     )
                 }
             },
         ];
-        this.showModal = () => {
+        this.showModal = (chunk) => {
             this.setState({
                 visible: true,
+                selected_chunk: chunk
             });
         };
 
@@ -106,8 +134,10 @@ class Dashboard extends React.Component {
         };
 
         this.handleCancel = e => {
+
             console.log(e);
             this.setState({
+                audio_file: '',
                 visible: false,
             });
         };
@@ -127,7 +157,6 @@ class Dashboard extends React.Component {
                             foss: res.data.video_data.foss,
                             status: res.data.video_data.status,
                             checksum: res.data.video_data.checksum,
-                            loading: false
                         });
                         if (res.data.video_data.processed_video === null) {
                             this.setState(
@@ -138,7 +167,7 @@ class Dashboard extends React.Component {
                         } else {
                             this.setState({'processed_video': res.data.video_data.processed_video})
                         }
-                        if (res.data.video_data.status === 'done') {
+                        if (res.data.video_data.status === 'done' || res.data.video_data.status === 'error' || res.data.video_data.status === 'media_not_found') {
                             clearInterval(this.apiLoop);
                             this.setState({processed: true})
                         }
@@ -172,78 +201,125 @@ class Dashboard extends React.Component {
         this.fetchData()
     }
 
-
     componentWillUnmount() {
         clearInterval(this.apiLoop)
     }
 
 
     render() {
-        let isLoading = this.state.loading
-        return (
-            <div>
-                {isLoading ?
-                    <Space size="middle">
-                        <Spin size="large"/>
-                    </Space> : <div>
-                        <Row align="middle">
-                            <Col span={4}
-                                 style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
-                                <Progress type="circle"
-                                          percent={parseInt((this.state.current_count / this.state.total_count) * 100)}
-                                          status={this.state.progress_status}/>
-                            </Col>
-                            <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                                 span={4}>
-                                <Typography>
-                                    <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
-                                    <Title>
-                                        <Button type="primary" icon={<DownloadOutlined/>} size='large'>Download
-                                            Tutorial</Button>
+        const {uploading, audio_file} = this.state;
+        const config = {
+            disabled: audio_file,
+            accept: 'audio/mp3',
+            onRemove: () => this.setState({audio_file: ''}),
+            beforeUpload: file => {
+                this.setState(state => ({
+                    audio_file: file,
+                }));
+                return false;
+            },
+            name: audio_file.name,
+        };
+        let status = this.state.status
+        if (status === 'loading') {
+            return (
+                <Result
+                    icon={<LoadingOutlined/>}
+                    title="Fetching Files"
+                />
 
-                                    </Title>
-                                </Typography>
-                            </Col>
+            )
+        } else if (status === 'not found') {
+            return (<Error403Component/>)
+        } else if (status === 'media_not_found') {
+            return (<MediaNotFound/>)
+        } else {
+            return (
+                <div>
+                    <Breadcrumb>
+                        <Breadcrumb.Item href="/">
+                            <HomeOutlined/>
+                        </Breadcrumb.Item>
+                        <Breadcrumb.Item href="/videoprocessing">
+                            <VideoCameraOutlined/>
+                            <span>Video Processing</span>
+                        </Breadcrumb.Item>
+                        <Breadcrumb.Item>
+                            <span>Dashboard</span>
+                        </Breadcrumb.Item>
+                    </Breadcrumb>
+                    <Row align="middle">
+                        <Col span={4}
+                             style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
+                            <Progress type="circle"
+                                      percent={parseInt((this.state.current_count / this.state.total_count) * 100)}
+                                      status={this.state.progress_status}/>
+                        </Col>
+                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
+                             span={4}>
+                            <Typography>
+                                <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
+                                <Title>
+                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'>Download
+                                        Tutorial</Button>
 
-                            <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                                 span={8}>
-                                <Typography>
-                                    <Title level={3}>{this.state.tutorial_name}</Title>
-                                    <Title level={4}>{this.state.foss}</Title>
-                                </Typography>
-                            </Col>
+                                </Title>
+                            </Typography>
+                        </Col>
 
-                            <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                                 span={8}>
+                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
+                             span={8}>
+                            <Typography>
+                                <Title level={3}>{this.state.tutorial_name}</Title>
+                                <Title level={4}>{this.state.foss}</Title>
+                            </Typography>
+                        </Col>
 
-                                <ReactPlayer
-                                    height={200}
-                                    url={this.state.processed_video} controls/>
-                            </Col>
+                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
+                             span={8}>
 
-                        </Row>
-                        <Row>
-                            <Table
-                                loading={this.state.isLoading}
-                                dataSource={this.state.chunks}
-                                columns={this.columns}/>
-                        </Row>
-                        <Modal
-                            title="Change Audio"
-                            visible={this.state.visible}
-                            onOk={this.handleOk}
-                            onCancel={this.handleCancel}
-                        >
-                            <Dragger {...this.config}>
-                                <p className="ant-upload-drag-icon">
-                                    <InboxOutlined/>
-                                </p>
-                                <p className="ant-upload-text">Click or drag audio to this area to upload</p>
-                            </Dragger>
-                        </Modal>
-                    </div>}
+                            <ReactPlayer
+                                height={200}
+                                url={this.state.processed_video} controls/>
+                        </Col>
 
-            </div>)
+                    </Row>
+                    <Row>
+                        <Table
+                            dataSource={this.state.chunks}
+                            columns={this.columns}/>
+                    </Row>
+                    <Modal
+                        title="Change Audio"
+                        visible={this.state.visible}
+                        onOk={this.handleOk}
+                        okButtonProps={{
+
+
+                            type: "primary",
+                            onClick: this.handleUpload,
+                            disabled: audio_file.length === 0,
+                            loading: uploading,
+                            style: {marginTop: 16}
+                        }
+                        }
+                        okText={uploading ? 'Uploading' : 'Start Upload'}
+                        onCancel={this.handleCancel}
+                    >
+                        <Dragger {...config}>
+                            <p className="ant-upload-drag-icon">
+                                <InboxOutlined/>
+                            </p>
+                            <p className="ant-upload-text">Click or drag audio to this area to upload</p>
+                        </Dragger>
+                        <Divider/>
+                        <Text>Subititle</Text>
+                        <Input.TextArea  allowClear autoSize defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}/>,
+                    </Modal>
+                </div>
+
+            )
+        }
     }
 
 

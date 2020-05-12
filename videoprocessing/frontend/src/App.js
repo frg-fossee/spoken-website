@@ -26,7 +26,7 @@ class App extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className='App'>
                 <Switch>
                     <Route exact path='/' component={TutorialsListComponent}/>
                     <Route path='/dashboard' component={Dashboard}/>
