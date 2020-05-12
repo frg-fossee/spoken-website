@@ -314,7 +314,13 @@ class Dashboard extends React.Component {
                         </Dragger>
                         <Divider/>
                         <Text>Subititle</Text>
-                        <Input.TextArea  allowClear autoSize defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}/>,
+                        {
+                            this.state.status === 'done' ? <Input.TextArea allowClear autoSize
+                                                                           defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}/> : null
+
+
+                        }
+
                     </Modal>
                 </div>
 
