@@ -57,20 +57,29 @@ class Dashboard extends React.Component {
             visible: false,
             audio_file: '',
             uploading: false,
-            selected_chunk: 0
+            selected_chunk: 0,
+            selected_chunk_sub: ''
+        }
+        this.handleChange = (e) => {
+            let value = e.target.value
+            this.setState({selected_chunk_sub: value});
+
         }
         this.handleUpload = () => {
-            const {audio_file} = this.state;
-            console.log(audio_file)
-            const formData = new FormData();
-            formData.append('files[]', audio_file);
-
             this.setState({
                 uploading: true,
             });
-            //to do
-
-
+            const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
+            console.log(audio_file)
+            const formData = new FormData();
+            formData.append('audio_chunk', audio_file);
+            formData.append('subtitle', selected_chunk_sub)
+            axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${selected_chunk}`,formData)
+                .then(()=>{
+                    this.fetchData();
+                    this.setState({uploading: false});
+                })
+                .then(() => this.handleCancel())
         };
 
         this.columns = [
@@ -315,8 +324,14 @@ class Dashboard extends React.Component {
                         <Divider/>
                         <Text>Subititle</Text>
                         {
-                            this.state.status === 'done' ? <Input.TextArea allowClear autoSize
-                                                                           defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}/> : null
+                            this.state.status === 'done' ?
+                                <Input.TextArea allowClear
+                                                autoSize
+                                                defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}
+                                                onChange={this.handleChange}
+                                />
+                                                :
+                                null
 
 
                         }
