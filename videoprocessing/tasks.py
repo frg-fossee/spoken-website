@@ -37,6 +37,9 @@ def copy_video_generate_checksum(video_id, file_path):
     if exits checksum will be generated
     """
     try:
+        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT)):
+            os.mkdir(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT))
+
         folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
         os.mkdir(folder_path)
         os.chdir(folder_path)

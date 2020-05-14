@@ -2,6 +2,8 @@ import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
 import axios from 'axios'
+import ReactHtmlParser, { processNodes, convertNodeToElement, htmlparser2 } from 'react-html-parser';
+
 import {
     Breadcrumb,
     Button,
@@ -15,7 +17,8 @@ import {
     Space,
     Spin,
     Table,
-    Typography
+    Typography,
+    Skeleton
 } from "antd";
 import ReactAudioPlayer from 'react-audio-player';
 import ReactPlayer from "react-player";
@@ -68,6 +71,8 @@ class Dashboard extends React.Component {
         this.handleUpload = () => {
             this.setState({
                 uploading: true,
+                progress_status: 'normal',
+                status: 'Uploading'
             });
             const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
             console.log(audio_file)
@@ -94,33 +99,46 @@ class Dashboard extends React.Component {
                 title: 'Audio',
                 dataIndex: 'audio_chunk',
                 key: 'audio_chunk',
+                width: '10%',
                 render: (audio_chunk) => {
                     return (<ReactAudioPlayer
                         src={audio_chunk}
                         controls
                         controlsList="nodownload"
                     />)
-                }
+                },
             },
             {
                 title: 'Start Time',
                 dataIndex: 'start_time',
                 key: 'start_time',
+                width: '10%',
+
+
+
+
             },
             {
                 title: 'End Time',
                 dataIndex: 'end_time',
                 key: 'end_time',
+                width: '10%',
+
             },
             {
                 title: 'Subtitle',
                 dataIndex: 'subtitle',
                 key: 'subtitle',
+                width: '55%',
+                // render: (value) => {
+                //     return (ReactHtmlParser(value))
+                // },
                 sorter: (a, b) => a.subtitle.localeCompare(b.subtitle),
                 sortDirections: ['descend', 'ascend']
             },
             {
                 title: 'Change Audio',
+                width: '10%',
                 render: (value) => {
                     return (<Button icon={<AudioOutlined/>} onClick={() => this.showModal(value.chunk_no)}>Change
                             Audio</Button>
@@ -129,9 +147,11 @@ class Dashboard extends React.Component {
             },
         ];
         this.showModal = (chunk) => {
+            let sutitle = this.state.chunks[chunk]['subtitle']
             this.setState({
                 visible: true,
-                selected_chunk: chunk
+                selected_chunk: chunk,
+                selected_chunk_sub: sutitle
             });
         };
 
@@ -228,6 +248,7 @@ class Dashboard extends React.Component {
                 return false;
             },
             name: audio_file.name,
+            files : []
         };
         let status = this.state.status
         if (status === 'loading') {
@@ -269,7 +290,7 @@ class Dashboard extends React.Component {
                             <Typography>
                                 <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
                                 <Title>
-                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'>Download
+                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'  href={this.state.processed_video} style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>
 
                                 </Title>
@@ -287,14 +308,20 @@ class Dashboard extends React.Component {
                         <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
                              span={8}>
 
-                            <ReactPlayer
-                                height={200}
-                                url={this.state.processed_video} controls/>
+                            {
+                                this.state.status==='done'?                             <ReactPlayer
+                                    height={200}
+                                    url={this.state.processed_video} controls/>:
+                                    <Skeleton.Input style={{ height: '200px' }} active/>
+                            }
+
+
                         </Col>
 
                     </Row>
                     <Row>
                         <Table
+                            className='data-table'
                             dataSource={this.state.chunks}
                             columns={this.columns}/>
                     </Row>
@@ -327,7 +354,7 @@ class Dashboard extends React.Component {
                             this.state.status === 'done' ?
                                 <Input.TextArea allowClear
                                                 autoSize
-                                                defaultValue={this.state.chunks[this.state.selected_chunk]['subtitle']}
+                                                value={this.state.selected_chunk_sub}
                                                 onChange={this.handleChange}
                                 />
                                                 :
