@@ -156,7 +156,10 @@ class ChangeAudio(generics.RetrieveUpdateAPIView):
         """it will upload the new audio of specified chunk"""
         instance = self.get_object()
         instance.audio_chunk = request.data.get('audio_chunk')
+        instance.subtitle = request.data.get('subtitle')
+
         instance.save()
+
         serializer = ChangeAudioSerializer(instance)
         new_audio_trim.delay(serializer.data)
         return Response(serializer.data)

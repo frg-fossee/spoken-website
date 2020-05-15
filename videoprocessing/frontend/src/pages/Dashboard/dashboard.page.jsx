@@ -2,7 +2,6 @@ import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
 import axios from 'axios'
-import ReactHtmlParser, { processNodes, convertNodeToElement, htmlparser2 } from 'react-html-parser';
 
 import {
     Breadcrumb,
@@ -12,25 +11,26 @@ import {
     Input,
     Modal,
     notification,
-    Progress, Result,
+    Progress,
+    Result,
     Row,
-    Space,
-    Spin,
+    Skeleton,
     Table,
     Typography,
-    Skeleton
+    Upload
 } from "antd";
 import ReactAudioPlayer from 'react-audio-player';
 import ReactPlayer from "react-player";
 import {
     AudioOutlined,
-    LoadingOutlined,
-    InboxOutlined,
+    CaretRightOutlined,
     DownloadOutlined,
     HomeOutlined,
+    InboxOutlined,
+    LoadingOutlined,
+    PauseOutlined,
     VideoCameraOutlined
 } from '@ant-design/icons'
-import {Upload, message} from 'antd';
 import MediaNotFound from "../../components/errors/mediaNotFound";
 import Error403Component from "../../components/errors/error403.component";
 import './dashboard.page.css'
@@ -61,7 +61,8 @@ class Dashboard extends React.Component {
             audio_file: '',
             uploading: false,
             selected_chunk: 0,
-            selected_chunk_sub: ''
+            selected_chunk_sub: '',
+            playing: false
         }
         this.handleChange = (e) => {
             let value = e.target.value
@@ -79,8 +80,8 @@ class Dashboard extends React.Component {
             const formData = new FormData();
             formData.append('audio_chunk', audio_file);
             formData.append('subtitle', selected_chunk_sub)
-            axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${selected_chunk}`,formData)
-                .then(()=>{
+            axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${selected_chunk}`, formData)
+                .then(() => {
                     this.fetchData();
                     this.setState({uploading: false});
                 })
@@ -115,8 +116,6 @@ class Dashboard extends React.Component {
                 width: '10%',
 
 
-
-
             },
             {
                 title: 'End Time',
@@ -148,6 +147,15 @@ class Dashboard extends React.Component {
         ];
         this.showModal = (chunk) => {
             let sutitle = this.state.chunks[chunk]['subtitle']
+            let start_time = this.state.chunks[chunk]['start_time']
+            setTimeout((chunk) => {
+                let a = start_time.split(':');
+                let seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+                console.log(seconds)
+                this.player.seekTo(seconds, 'seconds')
+                // this.player.showPreview()
+
+            }, 1000)
             this.setState({
                 visible: true,
                 selected_chunk: chunk,
@@ -165,6 +173,7 @@ class Dashboard extends React.Component {
         this.handleCancel = e => {
 
             console.log(e);
+            this.setState({playing: false})
             this.setState({
                 audio_file: '',
                 visible: false,
@@ -220,6 +229,35 @@ class Dashboard extends React.Component {
 
     }
 
+    ref = player => {
+        this.player = player
+    }
+
+    togglePlayButton = () => {
+        let status = this.state.playing
+        status ? this.setState({playing: false}) : this.setState({playing: true})
+    }
+
+    pauseVideo = video => {
+        let chunk = this.state.selected_chunk
+
+        let start_time = this.state.chunks[chunk]['start_time']
+        let a = start_time.split(':');
+        let start_seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+        let end_time = this.state.chunks[chunk]['end_time']
+        a = end_time.split(':');
+        let end_seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+        // this.player.showPreview()
+
+
+        if (Math.floor(video.playedSeconds) === end_seconds) {
+            this.setState({playing: false})
+            this.player.seekTo(start_seconds, 'seconds')
+        }
+    }
+
+
     componentWillMount() {
         let id = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).id
         this.setState({id: id})
@@ -248,7 +286,7 @@ class Dashboard extends React.Component {
                 return false;
             },
             name: audio_file.name,
-            files : []
+            files: []
         };
         let status = this.state.status
         if (status === 'loading') {
@@ -290,7 +328,9 @@ class Dashboard extends React.Component {
                             <Typography>
                                 <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
                                 <Title>
-                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'  href={this.state.processed_video} style={{textDecoration: 'none', color: 'white'}}>Download
+                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'
+                                            href={this.state.processed_video}
+                                            style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>
 
                                 </Title>
@@ -309,10 +349,12 @@ class Dashboard extends React.Component {
                              span={8}>
 
                             {
-                                this.state.status==='done'?                             <ReactPlayer
-                                    height={200}
-                                    url={this.state.processed_video} controls/>:
-                                    <Skeleton.Input style={{ height: '200px' }} active/>
+                                this.state.status === 'done' ? <ReactPlayer
+
+
+                                        height={200}
+                                        url={this.state.processed_video} controls/> :
+                                    <Skeleton.Input style={{height: '200px'}} active/>
                             }
 
 
@@ -342,6 +384,27 @@ class Dashboard extends React.Component {
                         okText={uploading ? 'Uploading' : 'Start Upload'}
                         onCancel={this.handleCancel}
                     >
+                        <ReactPlayer
+                            controls={false}
+                            playing={this.state.playing}
+                            onProgress={this.pauseVideo}
+                            ref={this.ref}
+                            width='100%'
+                            url={this.state.processed_video}/>
+                        <br/>
+                        <div style={{textAlign: 'center'}}>
+
+                            <Button
+                                size='large'
+                                type="primary"
+                                shape="round"
+                                icon={this.state.playing ? <PauseOutlined/> : <CaretRightOutlined/>}
+                                onClick={this.togglePlayButton}
+                            />
+                        </div>
+
+
+                        <Divider/>
                         <Dragger {...config}>
                             <p className="ant-upload-drag-icon">
                                 <InboxOutlined/>
@@ -357,7 +420,7 @@ class Dashboard extends React.Component {
                                                 value={this.state.selected_chunk_sub}
                                                 onChange={this.handleChange}
                                 />
-                                                :
+                                :
                                 null
 
 

@@ -99,7 +99,7 @@ def process_video(video_id):
     compile_video_list = open(CHUNKS_DIRECTORY + '/' + CHUNKS_LIST_FILE_NAME, 'w+')
     temp = open(CHUNKS_DIRECTORY + '/' + 'temp.txt', 'w+')
 
-    subs = pysrt.open(SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='iso-8859-1')
+    subs = pysrt.open(SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='utf-8')
     VideoTutorial.objects.filter(pk=video_id).update(total_chunks=len(subs))
 
     for i in range(len(subs)):
@@ -153,7 +153,7 @@ def process_video(video_id):
                                      str(i) + AUDIO_FILE_EXTENSION),
             start_time=start_time,
             end_time=end_time,
-            subtitle=sub_text
+            subtitle=sub_text.encode()
         )
 
         if i == len(subs) - 1:

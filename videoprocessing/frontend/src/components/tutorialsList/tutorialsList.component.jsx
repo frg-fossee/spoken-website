@@ -1,8 +1,8 @@
 import React from "react";
 import axios from 'axios'
 import {Breadcrumb, Button, Col, Divider, Input, notification, Popconfirm, Row, Select, Table, Typography} from 'antd';
-import {EditOutlined, EyeOutlined, SearchOutlined,HomeOutlined,VideoCameraOutlined} from '@ant-design/icons'
-import {Link, withRouter} from "react-router-dom";
+import {EditOutlined, EyeOutlined, HomeOutlined, SearchOutlined, VideoCameraOutlined} from '@ant-design/icons'
+import {withRouter} from "react-router-dom";
 
 const {Option} = Select;
 const {Text} = Typography
@@ -203,7 +203,8 @@ class TutorialsListComponent extends React.Component {
                             if (filtered_tuts[i].tutorial_id === tut.tutorial_detail && filtered_tuts[i].language_id === tut.language) {
                                 filtered_tuts[i].isEdited = true
                                 filtered_tuts[i].button =
-                                    <Button size={'large'} icon={<EyeOutlined/>} href={`#/dashboard?id=${tut.id}`}>Edit Video</Button>
+                                    <Button size={'large'} icon={<EyeOutlined/>} href={`#/dashboard?id=${tut.id}`}>Edit
+                                        Video</Button>
                             }
                         }
                     })
@@ -228,14 +229,14 @@ class TutorialsListComponent extends React.Component {
             <div>
                 <Breadcrumb>
                     <Breadcrumb.Item href="/">
-                        <HomeOutlined />
+                        <HomeOutlined/>
                     </Breadcrumb.Item>
                     <Breadcrumb.Item>
-                        <VideoCameraOutlined />
+                        <VideoCameraOutlined/>
                         <span>Video Processing</span>
                     </Breadcrumb.Item>
                 </Breadcrumb>
-                <Divider />
+                <Divider/>
                 <Row xs={2} sm={4} md={6} lg={10} xl={10}>
                     <Col span={6} offset={1}>
                         <Text level={4}>
@@ -276,7 +277,7 @@ class TutorialsListComponent extends React.Component {
                     </Col>
                     <Col span={1}/>
                 </Row>
-                <Divider style={{backgroundColor: 'white'}} />
+                <Divider style={{backgroundColor: 'white'}}/>
                 <Table
                     loading={this.state.isLoading}
                     dataSource={this.state.searchBox !== '' ? this.state.searchFilteredTable : this.state.tutorialsInTable}
