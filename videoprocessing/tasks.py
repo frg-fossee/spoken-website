@@ -209,7 +209,7 @@ def new_audio_trim(chunk):
         # add some silence
         abs_diff = str(abs(audio_diff - audio_len))
         os.system(
-            "ffmpeg -f lavfi -i anullsrc=sample_rate=48000 -ab " + AUDIO_BIT_RATE + " -t " + abs_diff + " silence.mp3")
+            "ffmpeg -f -y lavfi -i anullsrc=sample_rate=48000 -ab " + AUDIO_BIT_RATE + " -t " + abs_diff + " silence.mp3")
         os.system('ffmpeg -y -i "concat:temp1.mp3|silence.mp3" -acodec copy temp2.mp3')
         command = str("ffmpeg -y -i temp2.mp3 -ss 00:00:00.000 " +
                       " -to " + str(diff) +
