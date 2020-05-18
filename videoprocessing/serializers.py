@@ -63,24 +63,44 @@ class VideoChunkSerializer(serializers.ModelSerializer):
         ]
 
 
+class VideoChunkHistory(serializers.ModelSerializer):
+    """Serializer to list all the revisions of a video chunk"""
+    def __init__(self, model, *args, fields='__all__', **kwargs):
+        self.Meta.model = model
+        self.Meta.fields = fields
+        super().__init__()
+
+    class Meta:
+        pass
+
+
 class ChangeAudioSerializer(serializers.ModelSerializer):
     """Serializer to upload new audio for a particular chunk"""
+    history = serializers.SerializerMethodField()
+
+    def get_history(self, obj):
+        model = obj.history.__dict__['model']
+        fields = ['history_id', 'history_date', 'subtitle', 'audio_chunk', ]
+        serializer = VideoChunkHistory(model, obj.history.all().order_by('-history_date'), fields=fields, many=True)
+        serializer.is_valid()
+        print(serializer.data)
+        return serializer.data
 
     class Meta:
         model = VideoChunk
         fields = [
             'chunk_no',
-            # 'video_chunk',
             'audio_chunk',
             'start_time',
             'end_time',
             'subtitle',
-            'VideoTutorial'
+            'VideoTutorial',
+            'history'
         ]
         read_only_fields = [
             'chunk_no',
-            # 'video_chunk',
             'start_time',
             'end_time',
-            'VideoTutorial'
+            'VideoTutorial',
+            'history'
         ]
