@@ -96,7 +96,8 @@ INSTALLED_APPS = [
     'impersonate',
     'corsheaders',
     'ckeditor',
-    'videoprocessing'
+    'videoprocessing',
+    'simple_history'
 ]
 
 ROOT_URLCONF = 'spoken.urls'
@@ -326,7 +327,8 @@ MIDDLEWARE = [
     'django.middleware.common.BrokenLinkEmailsMiddleware',
     # 'masquerade.middleware.MasqueradeMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
-    'impersonate.middleware.ImpersonateMiddleware'
+    'impersonate.middleware.ImpersonateMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware'
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True

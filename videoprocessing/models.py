@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from creation.models import TutorialDetail, Language
 from videoprocessing.storage import OverwriteStorage
@@ -128,3 +129,4 @@ class VideoChunk(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     subtitle = models.TextField()
+    history = HistoricalRecords()
