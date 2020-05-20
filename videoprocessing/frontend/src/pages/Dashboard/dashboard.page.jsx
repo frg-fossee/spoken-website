@@ -328,7 +328,9 @@ class Dashboard extends React.Component {
                             <Typography>
                                 <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
                                 <Title>
-                                    <Button type="primary" icon={<DownloadOutlined/>} size='large'
+                                    <Button
+                                        type="primary" icon={<DownloadOutlined/>} size='large'
+                                        download='video'
                                             href={this.state.processed_video}
                                             style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>

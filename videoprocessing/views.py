@@ -9,12 +9,12 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from creation.models import ContributorRole, TutorialDetail, Language
+from creation.models import ContributorRole, TutorialDetail, Language, TutorialResource
 from videoprocessing.models import VideoTutorial, VideoChunk
 from videoprocessing.permissions import is_tutorial_allotted, IsContributor
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer, \
     ChangeAudioSerializer
-from videoprocessing.tasks import copy_video_generate_checksum, new_audio_trim
+from videoprocessing.tasks import fetch_video_generate_checksum, new_audio_trim
 
 
 def index(request):
@@ -66,8 +66,8 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
             language_id = request.data['language']
             if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
 
-                # if VideoTutorial.objects.filter(tutorial_detail=tutorial_id):
-                #     return Response(status=status.HTTP_409_CONFLICT)
+                if VideoTutorial.objects.filter(tutorial_detail=tutorial_id):
+                    return Response(status=status.HTTP_409_CONFLICT)
 
                 tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
                 foss_id = tutorial_detail_object.foss_id
@@ -76,10 +76,13 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
                 file_name = tutorial_name + '-' + language_name
                 src = str(settings.MEDIA_ROOT + 'videos/' + str(foss_id) + '/' + str(tutorial_id) + '/' + file_name)
                 print(src)
+                file = TutorialResource.objects.get(tutorial_detail_id=tutorial_id, language_id=language_id)
+                video_file_extension = "." + file.video.split('.')[-1]
+
                 serializer = VideoSerializer(data=request.data)
                 if serializer.is_valid():
                     obj = serializer.save(user=request.user)
-                    copy_video_generate_checksum.delay(obj.id, src)
+                    fetch_video_generate_checksum.delay(obj.id, src, video_file_extension)
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_403_FORBIDDEN)
