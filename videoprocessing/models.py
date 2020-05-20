@@ -46,7 +46,7 @@ def create_with_pk(self):
 def validate_video(value):
     """Checking if the uploaded video has .mp4 extension"""
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
-    valid_extensions = ['.mp4']
+    valid_extensions = ['.mp4', '.ogv']
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension.')
 
@@ -62,7 +62,7 @@ def validate_subtitle(value):
 def validate_audio(value):
     """Checking if the uploaded audio has .mp3 extension"""
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
-    valid_extensions = ['.mp3']
+    valid_extensions = ['.mp3', '.ogg']
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension.')
 
