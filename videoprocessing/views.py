@@ -156,13 +156,10 @@ class ChangeAudio(generics.RetrieveUpdateAPIView):
             raise exceptions.ValidationError('Invalid UUID Or Chunk No')
 
     def update(self, request, *args, **kwargs):
-        """it will upload the new audio of specified chunk"""
         instance = self.get_object()
-        instance.audio_chunk = request.data.get('audio_chunk')
-        instance.subtitle = request.data.get('subtitle')
-
-        instance.save()
-
-        serializer = ChangeAudioSerializer(instance)
-        new_audio_trim.delay(serializer.data)
-        return Response(serializer.data)
+        serializer = ChangeAudioSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            new_audio_trim.delay(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
