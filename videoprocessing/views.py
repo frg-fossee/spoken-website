@@ -163,3 +163,38 @@ class ChangeAudio(generics.RetrieveUpdateAPIView):
             new_audio_trim.delay(serializer.data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RevertChunk(generics.UpdateAPIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsContributor]
+    serializer_class = ChangeAudioSerializer
+
+    def update(self, request, *args, **kwargs):
+        try:
+            history_id = self.kwargs['history_id']
+
+            chunk = VideoChunk.objects.get(VideoTutorial=self.kwargs['pk'], chunk_no=self.kwargs['chunk_no'])
+
+            latest_history_id = chunk.history.first().history_id
+            print(latest_history_id)
+
+            if int(latest_history_id) != int(history_id):
+                revert_ver = chunk.history.get(history_id=history_id)
+                revert_ver.instance.save()
+
+                serializer = ChangeAudioSerializer(chunk)
+                new_audio_trim.delay(serializer.data)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            else:
+                return Response({'details': 'Chunk already upto date'}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
