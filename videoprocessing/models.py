@@ -71,7 +71,7 @@ def validate_subtitle(value):
 def validate_audio(value):
     """Checking if the uploaded audio has .mp3 extension and it don't exist"""
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
-    valid_extensions = ['.mp3', '.ogg']
+    valid_extensions = ['.mp3']
 
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension.')
@@ -98,22 +98,19 @@ def get_audio_chunk_path(instance, filename):
     if (not instance.VideoTutorial.id) and (not instance.chunk_no):
         raise ValidationError('Invalid Project ID')
 
-    video_ext = '.' + str(instance.VideoTutorial.video).split('.')[-1]
     audio_ext = '.' + filename.split('.')[-1]
 
-    if (video_ext == '.ogv' and audio_ext == '.ogg') or (video_ext == '.mp4' and audio_ext == '.mp3'):
-        instance.audio_chunk.open()
+    instance.audio_chunk.open()
 
-        new_file_name = str(instance.chunk_no) + '_' + hash_file(instance.audio_chunk) + audio_ext
-        new_file_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, str(instance.VideoTutorial.id) + '/chunks/',
-                                     new_file_name)
+    new_file_name = str(instance.chunk_no) + '_' + hash_file(instance.audio_chunk) + audio_ext
+    new_file_path = os.path.join(settings.VIDEO_PROCESSING_ROOT, str(instance.VideoTutorial.id) + '/chunks/',
+                                 new_file_name)
 
-        print(os.path.exists(os.path.join(settings.MEDIA_ROOT, new_file_path)))
-        if os.path.exists(os.path.join(settings.MEDIA_ROOT, new_file_path)):
-            raise ValidationError({'details': 'File Already Exist'})
+    print(os.path.exists(os.path.join(settings.MEDIA_ROOT, new_file_path)))
+    if os.path.exists(os.path.join(settings.MEDIA_ROOT, new_file_path)):
+        raise ValidationError({'details': 'File Already Exist'})
 
-        return new_file_path
-    raise ValidationError({'details': 'Audio Format Not Supported'})
+    return new_file_path
 
 
 # Models

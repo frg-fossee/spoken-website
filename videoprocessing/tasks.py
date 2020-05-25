@@ -17,8 +17,10 @@ CHUNKS_DIRECTORY = 'chunks'
 AUDIO_FILE_NAME = 'audio'
 VIDEO_WITHOUT_AUDIO_FILE_NAME = 'no_audio'
 PROCESSED_VIDEO_PREFIX = 'processed_video'
-VIDEO_FILE_EXTENSION = '.ogv'
-AUDIO_FILE_EXTENSION = '.ogg'
+VIDEO_FILE_EXTENSION = '.mp4'
+AUDIO_FILE_EXTENSION = '.mp3'
+INCOMING_VIDEO_EXTENSION = '.ogv'
+INCOMING_AUDIO_EXTENSION = '.ogg'
 SUBTITLE_FILE_EXTENSION = '.srt'
 CHUNKS_LIST_FILE_NAME = 'compiled_video_list.txt'
 
@@ -36,39 +38,37 @@ def fetch_video_generate_checksum(video_id, file_path, video_file_ext):
     copy the original video and subtitle file
     if exits checksum will be generated
     """
-    try:
-        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT)):
-            os.mkdir(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT))
+    if not os.path.exists(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT)):
+        os.mkdir(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT))
 
-        global VIDEO_FILE_EXTENSION
-        VIDEO_FILE_EXTENSION = video_file_ext
-        print(video_file_ext)
+    global INCOMING_VIDEO_EXTENSION
+    INCOMING_VIDEO_EXTENSION = video_file_ext
 
-        folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
-        os.mkdir(folder_path)
-        os.chdir(folder_path)
-        source = file_path
-        dest = settings.MEDIA_ROOT + settings.VIDEO_PROCESSING_ROOT + "/" + video_id
+    folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
+    os.mkdir(folder_path)
+    os.chdir(folder_path)
+    source = file_path
+    dest = settings.MEDIA_ROOT + settings.VIDEO_PROCESSING_ROOT + "/" + video_id
 
-        copy2(source + VIDEO_FILE_EXTENSION, dest + '/' + VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION)
-        copy2(source + SUBTITLE_FILE_EXTENSION, dest + '/' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION)
+    copy2(source + INCOMING_VIDEO_EXTENSION, dest + '/' + VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION)
+    copy2(source + SUBTITLE_FILE_EXTENSION, dest + '/' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION)
 
-        checksum = str(
-            md5(open(os.path.join(folder_path, VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION), 'rb').read()).hexdigest())
+    checksum = str(
+        md5(open(os.path.join(folder_path, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION), 'rb').read()).hexdigest())
 
-        VideoTutorial.objects.filter(pk=video_id).update(
-            video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION),
-            subtitle=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
-                                  SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION),
-            processed_video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
-                                         VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION),
-            checksum=checksum
-        )
-        process_video.delay(video_id)
-    except FileNotFoundError:
-        VideoTutorial.objects.filter(pk=video_id).update(
-            status='media_not_found'
-        )
+    VideoTutorial.objects.filter(pk=video_id).update(
+        video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
+        subtitle=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
+                              SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION),
+        processed_video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
+                                     VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
+        checksum=checksum
+    )
+    process_video.delay(video_id)
+    # except FileNotFoundError:
+    #     VideoTutorial.objects.filter(pk=video_id).update(
+    #         status='media_not_found'
+    #     )
 
 
 @shared_task
@@ -79,13 +79,22 @@ def process_video(video_id):
     """
     folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
     os.chdir(folder_path)
+    # convert to mp4
     os.system(
-        'ffmpeg -i ' +
+        'ffmpeg -y -i ' + VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION +
+        ' -max_muxing_queue_size 1024 -c:v libx264 -c:a libmp3lame ' +
+        ' -ab ' + AUDIO_BIT_RATE +
+        ' -ar ' + AUDIO_SAMPLE_RATE +
+        ' ' + VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION)
+    # extract video
+    os.system(
+        'ffmpeg -y -i ' +
         VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
         ' -c copy -an ' +
         VIDEO_WITHOUT_AUDIO_FILE_NAME + VIDEO_FILE_EXTENSION)
+    # extract audio
     os.system(
-        'ffmpeg -i ' +
+        'ffmpeg -y -i ' +
         VIDEO_FILE_NAME + VIDEO_FILE_EXTENSION +
         ' -ab ' + AUDIO_BIT_RATE +
         ' -ar ' + AUDIO_SAMPLE_RATE +
@@ -172,27 +181,15 @@ def process_video(video_id):
 
 @shared_task
 def new_audio_trim(chunk):
-    global AUDIO_FILE_EXTENSION
-    global AUDIO_BIT_RATE
-    global AUDIO_SAMPLE_RATE
-    AUDIO_FILE_EXTENSION = "." + chunk['audio_chunk'].split('.')[-1]
-
     chunk_file = chunk['audio_chunk'].split('/')[-1]
     old_chunk_file = chunk['history'][1]['audio_chunk'].split('/')[-1]
 
-    print(old_chunk_file)
+    print('old', old_chunk_file)
+    print('new', chunk_file)
     video_id = chunk['VideoTutorial']
     folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
     chunk_directory = os.path.join(folder_path, CHUNKS_DIRECTORY)
     os.chdir(chunk_directory)
-
-    # # metadata
-    # AUDIO_BIT_RATE = str(os.popen(
-    #     'ffprobe -v error -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 ' + old_chunk_file).read()).rstrip()
-    # AUDIO_SAMPLE_RATE = str(os.popen(
-    #     'ffprobe -v error -show_entries stream=sample_rate -of default=noprint_wrappers=1:nokey=1 ' + old_chunk_file).read()).rstrip()
-    #
-    # print(AUDIO_SAMPLE_RATE, AUDIO_BIT_RATE)
 
     fp = open(CHUNKS_LIST_FILE_NAME, 'r')
     chunk_list = str(fp.read())
@@ -212,14 +209,10 @@ def new_audio_trim(chunk):
     diff = datetime.strptime(end_time, time_format) - datetime.strptime(start_time, time_format)
 
     os.rename(chunk_file, 'temp' + AUDIO_FILE_EXTENSION)
-    print('ffmpeg -i temp' + AUDIO_FILE_EXTENSION +
-          ' -ab ' + AUDIO_BIT_RATE +
-          ' -ar ' + AUDIO_SAMPLE_RATE +
-          ' -vn -c copy temp1' + AUDIO_FILE_EXTENSION)
     os.system('ffmpeg -i temp' + AUDIO_FILE_EXTENSION +
               ' -ab ' + AUDIO_BIT_RATE +
               ' -ar ' + AUDIO_SAMPLE_RATE +
-              ' -vn -c copy temp1' + AUDIO_FILE_EXTENSION)
+              ' -c copy temp1' + AUDIO_FILE_EXTENSION)
     # getting the length of audio
     audio_length_format = '%H:%M:%S.%f'
     audio_length_str = str(os.popen(
@@ -257,7 +250,7 @@ def new_audio_trim(chunk):
     if os.path.exists('temp2' + AUDIO_FILE_EXTENSION):
         os.remove('temp2' + AUDIO_FILE_EXTENSION)
 
-    # compile_all_chunks(video_id)
+    compile_all_chunks(video_id)
 
 
 @shared_task()

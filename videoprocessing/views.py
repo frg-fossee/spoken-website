@@ -183,6 +183,7 @@ class RevertChunk(generics.UpdateAPIView):
                 revert_ver = chunk.history.get(history_id=history_id)
                 revert_ver.instance.save()
 
+                chunk = VideoChunk.objects.get(VideoTutorial=self.kwargs['pk'], chunk_no=self.kwargs['chunk_no'])
                 serializer = ChangeAudioSerializer(chunk)
                 new_audio_trim.delay(serializer.data)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -191,10 +192,3 @@ class RevertChunk(generics.UpdateAPIView):
                 return Response({'details': 'Chunk already upto date'}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-
-
