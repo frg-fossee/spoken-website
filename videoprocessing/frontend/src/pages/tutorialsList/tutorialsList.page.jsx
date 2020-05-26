@@ -3,6 +3,10 @@ import axios from 'axios'
 import {Breadcrumb, Button, Col, Divider, Input, notification, Popconfirm, Row, Select, Table, Typography} from 'antd';
 import {EditOutlined, EyeOutlined, HomeOutlined, SearchOutlined, VideoCameraOutlined} from '@ant-design/icons'
 import {withRouter} from "react-router-dom";
+import {connect} from 'react-redux'
+import {createStructuredSelector} from "reselect";
+import {selectFosses} from "../../redux/tutorials/tutorials.selectors";
+import {setAllTutorials} from "../../redux/tutorials/tutorials.actions";
 
 const {Option} = Select;
 const {Text} = Typography
@@ -35,7 +39,7 @@ const columns = [
     },
 ];
 
-class TutorialsListComponent extends React.Component {
+class TutorialsListPage extends React.Component {
 
     constructor(props) {
         super(props);
@@ -162,6 +166,7 @@ class TutorialsListComponent extends React.Component {
     }
 
     componentDidMount() {
+        const {setAllTutorials} = this.props
         let filtered_tuts = []
         let fosses = new Set()
         let tutorials = new Set()
@@ -169,6 +174,7 @@ class TutorialsListComponent extends React.Component {
         axios.get(`${process.env.REACT_APP_API_URL}/tutorials`)
             .then(res => {
                 let data = res.data
+                setAllTutorials(data)
                 data.map((tutorial) => {
                     let tut_obj = {};
                     tut_obj.key = tutorial.tutorial_detail.id
@@ -224,7 +230,7 @@ class TutorialsListComponent extends React.Component {
     }
 
     render() {
-
+console.log(this.props.fosses)
         return (
             <div>
                 <Breadcrumb>
@@ -289,4 +295,14 @@ class TutorialsListComponent extends React.Component {
     }
 }
 
-export default withRouter(TutorialsListComponent)
+const mapDispatchToProps = dispatch => ({
+    setAllTutorials: tutorials => dispatch(setAllTutorials(tutorials))
+})
+
+const mapStateToProps = createStructuredSelector({
+    fosses: selectFosses
+})
+
+
+
+export default withRouter(connect(mapStateToProps,mapDispatchToProps)(TutorialsListPage))

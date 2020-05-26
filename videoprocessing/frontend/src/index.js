@@ -5,15 +5,17 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import {HashRouter} from "react-router-dom";
 import {CookiesProvider} from 'react-cookie';
+import {Provider} from "react-redux";
+import store from "./redux/store";
 
 ReactDOM.render(
-    <HashRouter>
-        <CookiesProvider>
-
-            <App/>
-        </CookiesProvider>
-
-    </HashRouter>
+    <Provider store={store}>
+        <HashRouter>
+            <CookiesProvider>
+                <App/>
+            </CookiesProvider>
+        </HashRouter>
+    </Provider>
     ,
     document.getElementById('root')
 );

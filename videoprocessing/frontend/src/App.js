@@ -1,11 +1,15 @@
 import React from 'react';
 import './App.css';
-import TutorialsListComponent from "./components/tutorialsList/tutorialsList.component";
+import TutorialsListComponent from "./pages/tutorialsList/tutorialsList.page";
 import {Route, Switch} from 'react-router-dom';
-import Dashboard from "./pages/Dashboard/dashboard.page";
-import { instanceOf } from 'prop-types';
-import { withCookies, Cookies } from 'react-cookie';
+import Dashboard from "./pages/dashboard/dashboard.page";
+import {instanceOf} from 'prop-types';
+import {Cookies, withCookies} from 'react-cookie';
 import axios from "axios";
+import {createStructuredSelector} from "reselect";
+import {selectFosses} from "./redux/tutorials/tutorials.selectors";
+import {connect} from "react-redux";
+
 
 class App extends React.Component {
     static propTypes = {
@@ -24,6 +28,7 @@ class App extends React.Component {
 
     }
 
+
     render() {
         return (
             <div className='App'>
@@ -38,4 +43,9 @@ class App extends React.Component {
     };
 }
 
-export default withCookies(App);
+const mapStateToProps = createStructuredSelector({
+    fosses: selectFosses
+})
+
+
+export default withCookies(connect(mapStateToProps)(App));

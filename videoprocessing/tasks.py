@@ -212,7 +212,7 @@ def new_audio_trim(chunk):
     os.system('ffmpeg -i temp' + AUDIO_FILE_EXTENSION +
               ' -ab ' + AUDIO_BIT_RATE +
               ' -ar ' + AUDIO_SAMPLE_RATE +
-              ' -c copy temp1' + AUDIO_FILE_EXTENSION)
+              ' -c copy -map_metadata -1 temp1' + AUDIO_FILE_EXTENSION)
     # getting the length of audio
     audio_length_format = '%H:%M:%S.%f'
     audio_length_str = str(os.popen(
