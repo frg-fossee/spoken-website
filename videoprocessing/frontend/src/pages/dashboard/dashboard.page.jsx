@@ -2,7 +2,6 @@ import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
 import axios from 'axios'
-
 import {
     Breadcrumb,
     Button,
@@ -16,9 +15,10 @@ import {
     Row,
     Skeleton,
     Table,
+    Tabs,
     Typography,
     Upload
-} from "antd";
+} from 'antd';
 import ReactAudioPlayer from 'react-audio-player';
 import ReactPlayer from "react-player";
 import {
@@ -29,14 +29,17 @@ import {
     InboxOutlined,
     LoadingOutlined,
     PauseOutlined,
+    RollbackOutlined,
     VideoCameraOutlined
 } from '@ant-design/icons'
 import MediaNotFound from "../../components/errors/mediaNotFound";
 import Error403Component from "../../components/errors/error403.component";
 import './dashboard.page.css'
+import RevertModal from "../../components/revertModal/revertModal.component";
 
 const {Dragger} = Upload;
 const {Title, Text} = Typography;
+const {TabPane} = Tabs
 
 
 class Dashboard extends React.Component {
@@ -62,12 +65,28 @@ class Dashboard extends React.Component {
             uploading: false,
             selected_chunk: 0,
             selected_chunk_sub: '',
-            playing: false
+            playing: false,
+            revertModalVisible: false,
+            revisionData: [],
+            revisionsTableLoading: true,
+            revertChunkSelected: ''
         }
         this.handleChange = (e) => {
             let value = e.target.value
             this.setState({selected_chunk_sub: value});
 
+        }
+        this.revertShowModal = (chunk_no) => {
+            this.setState({revertModalVisible: true, revisionData: [], revertChunkSelected: chunk_no})
+            axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}`)
+                .then((res) => {
+                    console.log(res.data.history)
+                    this.setState({revisionData: res.data.history.slice(1)})
+
+                })
+                .then(() => {
+                    this.setState({revisionsTableLoading: false})
+                })
         }
         this.handleUpload = () => {
             this.setState({
@@ -139,13 +158,22 @@ class Dashboard extends React.Component {
                 title: 'Change Audio',
                 width: '10%',
                 render: (value) => {
-                    return (<Button icon={<AudioOutlined/>} onClick={() => this.showModal(value.chunk_no)}>Change
+                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)}>Change
                             Audio</Button>
                     )
                 }
             },
+            {
+                title: 'Revert',
+                width: '10%',
+                render: (value) => {
+                    return (<Button icon={<RollbackOutlined/>}
+                                    onClick={() => this.revertShowModal(value.chunk_no)}>Revert </Button>
+                    )
+                }
+            },
         ];
-        this.showModal = (chunk) => {
+        this.changeAudioShowModal = (chunk) => {
             let sutitle = this.state.chunks[chunk]['subtitle']
             let start_time = this.state.chunks[chunk]['start_time']
             setTimeout((chunk) => {
@@ -169,6 +197,24 @@ class Dashboard extends React.Component {
                 visible: false,
             });
         };
+
+        this.revertHandleCancel = () => {
+            this.setState({revertModalVisible: false})
+        }
+
+        this.revertChunk = (history_id,chunk_no) => {
+            this.setState({
+                uploading: true,
+                progress_status: 'normal',
+                status: 'Reverting',
+            });
+            axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}/revert/${history_id}`)
+                .then(() => {
+                    this.fetchData();
+                    this.setState({uploading: false});
+                })
+                .then(() => this.revertHandleCancel())
+        }
 
         this.handleCancel = e => {
 
@@ -331,8 +377,8 @@ class Dashboard extends React.Component {
                                     <Button
                                         type="primary" icon={<DownloadOutlined/>} size='large'
                                         download='video'
-                                            href={this.state.processed_video}
-                                            style={{textDecoration: 'none', color: 'white'}}>Download
+                                        href={this.state.processed_video}
+                                        style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>
 
                                 </Title>
@@ -429,6 +475,15 @@ class Dashboard extends React.Component {
                         }
 
                     </Modal>
+                    <RevertModal
+                        revertModalVisible={this.state.revertModalVisible}
+                        revertHandleCancel={this.revertHandleCancel}
+                        dataSource={this.state.revisionData}
+                        isLoading={this.state.revisionsTableLoading}
+                        chunk_no={this.state.revertChunkSelected}
+                        revertChunk={this.revertChunk}
+                    />
+
                 </div>
 
             )

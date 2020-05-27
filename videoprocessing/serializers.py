@@ -65,6 +65,7 @@ class VideoChunkSerializer(serializers.ModelSerializer):
 
 class VideoChunkHistory(serializers.ModelSerializer):
     """Serializer to list all the revisions of a video chunk"""
+
     def __init__(self, model, *args, fields='__all__', **kwargs):
         self.Meta.model = model
         self.Meta.fields = fields

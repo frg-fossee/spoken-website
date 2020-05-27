@@ -38,37 +38,38 @@ def fetch_video_generate_checksum(video_id, file_path, video_file_ext):
     copy the original video and subtitle file
     if exits checksum will be generated
     """
-    if not os.path.exists(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT)):
-        os.mkdir(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT))
+    try:
+        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT)):
+            os.mkdir(os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT))
 
-    global INCOMING_VIDEO_EXTENSION
-    INCOMING_VIDEO_EXTENSION = video_file_ext
+        global INCOMING_VIDEO_EXTENSION
+        INCOMING_VIDEO_EXTENSION = video_file_ext
 
-    folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
-    os.mkdir(folder_path)
-    os.chdir(folder_path)
-    source = file_path
-    dest = settings.MEDIA_ROOT + settings.VIDEO_PROCESSING_ROOT + "/" + video_id
+        folder_path = os.path.join(settings.MEDIA_ROOT, settings.VIDEO_PROCESSING_ROOT, video_id)
+        os.mkdir(folder_path)
+        os.chdir(folder_path)
+        source = file_path
+        dest = settings.MEDIA_ROOT + settings.VIDEO_PROCESSING_ROOT + "/" + video_id
 
-    copy2(source + INCOMING_VIDEO_EXTENSION, dest + '/' + VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION)
-    copy2(source + SUBTITLE_FILE_EXTENSION, dest + '/' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION)
+        copy2(source + INCOMING_VIDEO_EXTENSION, dest + '/' + VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION)
+        copy2(source + SUBTITLE_FILE_EXTENSION, dest + '/' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION)
 
-    checksum = str(
-        md5(open(os.path.join(folder_path, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION), 'rb').read()).hexdigest())
+        checksum = str(
+            md5(open(os.path.join(folder_path, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION), 'rb').read()).hexdigest())
 
-    VideoTutorial.objects.filter(pk=video_id).update(
-        video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
-        subtitle=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
-                              SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION),
-        processed_video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
-                                     VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
-        checksum=checksum
-    )
-    process_video.delay(video_id)
-    # except FileNotFoundError:
-    #     VideoTutorial.objects.filter(pk=video_id).update(
-    #         status='media_not_found'
-    #     )
+        VideoTutorial.objects.filter(pk=video_id).update(
+            video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
+            subtitle=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
+                                  SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION),
+            processed_video=os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id,
+                                         VIDEO_FILE_NAME + INCOMING_VIDEO_EXTENSION),
+            checksum=checksum
+        )
+        process_video.delay(video_id)
+    except FileNotFoundError:
+        VideoTutorial.objects.filter(pk=video_id).update(
+            status='media_not_found'
+        )
 
 
 @shared_task

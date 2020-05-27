@@ -6,9 +6,7 @@ import Dashboard from "./pages/dashboard/dashboard.page";
 import {instanceOf} from 'prop-types';
 import {Cookies, withCookies} from 'react-cookie';
 import axios from "axios";
-import {createStructuredSelector} from "reselect";
-import {selectFosses} from "./redux/tutorials/tutorials.selectors";
-import {connect} from "react-redux";
+
 
 
 class App extends React.Component {
@@ -36,16 +34,11 @@ class App extends React.Component {
                     <Route exact path='/' component={TutorialsListComponent}/>
                     <Route path='/dashboard' component={Dashboard}/>
                 </Switch>
-
             </div>
 
         )
     };
 }
 
-const mapStateToProps = createStructuredSelector({
-    fosses: selectFosses
-})
 
-
-export default withCookies(connect(mapStateToProps)(App));
+export default withCookies(App);
