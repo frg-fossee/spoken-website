@@ -15,9 +15,7 @@ import {
     Row,
     Skeleton,
     Table,
-    Tabs,
     Typography,
-    Upload
 } from 'antd';
 import ReactAudioPlayer from 'react-audio-player';
 import ReactPlayer from "react-player";
@@ -26,7 +24,6 @@ import {
     CaretRightOutlined,
     DownloadOutlined,
     HomeOutlined,
-    InboxOutlined,
     LoadingOutlined,
     PauseOutlined,
     RollbackOutlined,
@@ -36,10 +33,10 @@ import MediaNotFound from "../../components/errors/mediaNotFound";
 import Error403Component from "../../components/errors/error403.component";
 import './dashboard.page.css'
 import RevertModal from "../../components/revertModal/revertModal.component";
+import 'react-dropzone-uploader/dist/styles.css'
+import Dropzone from 'react-dropzone-uploader'
 
-const {Dragger} = Upload;
 const {Title, Text} = Typography;
-const {TabPane} = Tabs
 
 
 class Dashboard extends React.Component {
@@ -69,7 +66,10 @@ class Dashboard extends React.Component {
             revertModalVisible: false,
             revisionData: [],
             revisionsTableLoading: true,
-            revertChunkSelected: ''
+            revertChunkSelected: '',
+            remove: () => {
+                console.log('nothing to remove')
+            }
         }
         this.handleChange = (e) => {
             let value = e.target.value
@@ -81,13 +81,27 @@ class Dashboard extends React.Component {
             axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}`)
                 .then((res) => {
                     console.log(res.data.history)
-                    this.setState({revisionData: res.data.history.slice(1)})
+                    this.setState({revisionData: res.data.history})
 
                 })
                 .then(() => {
                     this.setState({revisionsTableLoading: false})
                 })
         }
+        this.openNotificationWithIcon = (title, message, type) => {
+            notification[type]({
+                message: title,
+                description: message
+            });
+        };
+
+        this.handleChangeStatus = ({meta, file, remove}, status) => {
+            if (status !== 'rejected_file_type') {
+                this.setState({audio_file: file, remove: remove})
+            } else {
+                this.openNotificationWithIcon('Unsupported File', 'You can only upload .mp3 files', 'warning')
+            }
+        };
         this.handleUpload = () => {
             this.setState({
                 uploading: true,
@@ -105,6 +119,13 @@ class Dashboard extends React.Component {
                     this.setState({uploading: false});
                 })
                 .then(() => this.handleCancel())
+                .catch((error) => {
+                    console.log(error.response)
+                    this.setState({uploading: false});
+                    this.handleCancel()
+                    this.openNotificationWithIcon('Duplicate File', 'You have already uploaded this audio, Simply revert back', 'warning')
+
+                })
         };
 
         this.columns = [
@@ -124,7 +145,6 @@ class Dashboard extends React.Component {
                     return (<ReactAudioPlayer
                         src={audio_chunk}
                         controls
-                        controlsList="nodownload"
                     />)
                 },
             },
@@ -174,6 +194,7 @@ class Dashboard extends React.Component {
             },
         ];
         this.changeAudioShowModal = (chunk) => {
+            this.state.remove()
             let sutitle = this.state.chunks[chunk]['subtitle']
             let start_time = this.state.chunks[chunk]['start_time']
             setTimeout((chunk) => {
@@ -202,7 +223,7 @@ class Dashboard extends React.Component {
             this.setState({revertModalVisible: false})
         }
 
-        this.revertChunk = (history_id,chunk_no) => {
+        this.revertChunk = (history_id, chunk_no) => {
             this.setState({
                 uploading: true,
                 progress_status: 'normal',
@@ -321,19 +342,7 @@ class Dashboard extends React.Component {
 
     render() {
         const {uploading, audio_file} = this.state;
-        const config = {
-            disabled: audio_file,
-            accept: 'audio/mp3',
-            onRemove: () => this.setState({audio_file: ''}),
-            beforeUpload: file => {
-                this.setState(state => ({
-                    audio_file: file,
-                }));
-                return false;
-            },
-            name: audio_file.name,
-            files: []
-        };
+
         let status = this.state.status
         if (status === 'loading') {
             return (
@@ -453,16 +462,21 @@ class Dashboard extends React.Component {
 
 
                         <Divider/>
-                        <Dragger {...config}>
-                            <p className="ant-upload-drag-icon">
-                                <InboxOutlined/>
-                            </p>
-                            <p className="ant-upload-text">Click or drag audio to this area to upload</p>
-                        </Dragger>
+                        <Dropzone
+                            initialFiles={[]}
+                            canRemove={false}
+                            className="fileUploader"
+                            onChangeStatus={this.handleChangeStatus}
+                            accept=".mp3"
+                            multiple={false}
+                            autoUpload={false}
+                            maxFiles={1}
+                            inputContent="Drag Audio or Click to Browse"
+                        />
                         <Divider/>
                         <Text>Subititle</Text>
                         {
-                            this.state.status === 'done' ?
+                            status === 'done' ?
                                 <Input.TextArea allowClear
                                                 autoSize
                                                 value={this.state.selected_chunk_sub}
@@ -475,6 +489,7 @@ class Dashboard extends React.Component {
                         }
 
                     </Modal>
+
                     <RevertModal
                         revertModalVisible={this.state.revertModalVisible}
                         revertHandleCancel={this.revertHandleCancel}
