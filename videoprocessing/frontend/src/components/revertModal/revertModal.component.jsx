@@ -17,8 +17,8 @@ class RevertModal extends React.Component {
             splitView: true,
             oldValue: '',
             newValue: '',
-            oldDropDownValue: 'Select a date',
-            newDropDownValue: 'Select a date'
+            oldDropDownValue: 'Select a version',
+            newDropDownValue: 'Select a version',
         }
     }
 
@@ -35,13 +35,13 @@ class RevertModal extends React.Component {
         if (type === 'old') {
             this.setState({
                 oldValue: subtitle,
-                oldDropDownValue: `${d.toDateString()} ${d.toTimeString().split(' ')[0]}`
+                oldDropDownValue: `Version ${this.props.dataSource.length - value}`
             })
 
         } else {
             this.setState({
                 newValue: subtitle,
-                newDropDownValue: `${d.toDateString()} ${d.toTimeString().split(' ')[0]}`
+                newDropDownValue: `Version ${this.props.dataSource.length - value}`
             })
         }
 
@@ -58,7 +58,6 @@ class RevertModal extends React.Component {
 
     componentDidMount() {
         const history = this.props.dataSource;
-        console.log(history)
 
 
     }
@@ -68,6 +67,12 @@ class RevertModal extends React.Component {
         const {revertModalVisible, revertHandleCancel, isLoading, dataSource, revertChunk, chunk_no} = this.props
 
         const columns = [
+            {
+                title: 'Version',
+                key: 'index',
+                render: (text, record, index) => this.props.dataSource.length - index,
+                sortDirections: ['descend', 'ascend']
+            },
             {
                 title: 'Date',
                 dataIndex: 'history_date',
@@ -98,15 +103,20 @@ class RevertModal extends React.Component {
 
             {
                 title: 'Revert',
-                render: (value) => (
-                    <Popconfirm onConfirm={() => revertChunk(value.history_id, chunk_no)} title="Are you sure?"
-                                okText="Yes"
-                                cancelText="No">
-                        <Button size='middle' type="primary">Revert</Button>
+                render: (value, record, index) => (
+                    <Popconfirm
+                        onConfirm={() => revertChunk(value.history_id, chunk_no)} title="Are you sure?"
+                        okText="Yes"
+                        cancelText="No"
+                        disabled={index == 0}
+                    >
+                        <Button size='middle' type="primary"
+                                disabled={index === 0}>Revert</Button>
                     </Popconfirm>
                 )
             },
         ];
+
         return (
             <Modal className='revertModal' footer={null}
                    title="Revisions"
@@ -120,7 +130,7 @@ class RevertModal extends React.Component {
             >
                 <Tabs size='large' type="card">
                     <TabPane tab="Revert" key="1">
-                        <Table loading={isLoading} columns={columns} dataSource={dataSource.slice(1)}/>
+                        <Table loading={isLoading} columns={columns} dataSource={dataSource}/>
 
                     </TabPane>
                     <TabPane tab="Compare" key="2">
@@ -136,7 +146,7 @@ class RevertModal extends React.Component {
 
                                             key={item.history_id}
                                             value={idx}>
-                                            {`${d.toDateString()} ${d.toTimeString().split(' ')[0]}`}
+                                            {`Version ${this.props.dataSource.length - idx}`}
                                         </Option>)
                                     })
                                 }
@@ -153,7 +163,7 @@ class RevertModal extends React.Component {
                                         return (<Option
                                             key={item.history_id}
                                             value={idx}>
-                                            {`${d.toDateString()} ${d.toTimeString().split(' ')[0]}`}
+                                            {`Version ${this.props.dataSource.length - idx}`}
                                         </Option>)
                                     })
                                 }

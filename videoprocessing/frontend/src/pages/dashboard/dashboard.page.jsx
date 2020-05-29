@@ -1,6 +1,8 @@
 import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
+import {ReactMic} from 'react-mic';
+
 import axios from 'axios'
 import {
     Breadcrumb,
@@ -13,8 +15,9 @@ import {
     Progress,
     Result,
     Row,
-    Skeleton,
+    Skeleton, Space,
     Table,
+    Tabs,
     Typography,
 } from 'antd';
 import ReactAudioPlayer from 'react-audio-player';
@@ -37,6 +40,7 @@ import 'react-dropzone-uploader/dist/styles.css'
 import Dropzone from 'react-dropzone-uploader'
 
 const {Title, Text} = Typography;
+const {TabPane} = Tabs
 
 
 class Dashboard extends React.Component {
@@ -67,9 +71,12 @@ class Dashboard extends React.Component {
             revisionData: [],
             revisionsTableLoading: true,
             revertChunkSelected: '',
+            subtitle: '',
+            downloadURL: '',
             remove: () => {
                 console.log('nothing to remove')
-            }
+            },
+            record: false
         }
         this.handleChange = (e) => {
             let value = e.target.value
@@ -121,7 +128,7 @@ class Dashboard extends React.Component {
                 .then(() => this.handleCancel())
                 .catch((error) => {
                     console.log(error.response)
-                    this.setState({uploading: false});
+                    this.setState({uploading: false, status:'done'});
                     this.handleCancel()
                     this.openNotificationWithIcon('Duplicate File', 'You have already uploaded this audio, Simply revert back', 'warning')
 
@@ -175,11 +182,11 @@ class Dashboard extends React.Component {
                 sortDirections: ['descend', 'ascend']
             },
             {
-                title: 'Change Audio',
+                title: 'Change Audio/Subtitle',
                 width: '10%',
                 render: (value) => {
-                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)}>Change
-                            Audio</Button>
+                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)} disabled={this.state.status!=='done'}>Change
+                            Audio / Subtitle</Button>
                     )
                 }
             },
@@ -187,8 +194,10 @@ class Dashboard extends React.Component {
                 title: 'Revert',
                 width: '10%',
                 render: (value) => {
+                    console.log(value.revisions)
                     return (<Button icon={<RollbackOutlined/>}
-                                    onClick={() => this.revertShowModal(value.chunk_no)}>Revert </Button>
+                                    onClick={() => this.revertShowModal(value.chunk_no)}
+                                    disabled={value.revisions <= 1 || this.state.status!=='done'}>Revert </Button>
                     )
                 }
             },
@@ -270,7 +279,10 @@ class Dashboard extends React.Component {
                                 }
                             )
                         } else {
-                            this.setState({'processed_video': res.data.video_data.processed_video})
+                            this.setState({
+                                'processed_video': res.data.video_data.processed_video,
+                                'subtitle': res.data.video_data.subtitle
+                            })
                         }
                         if (res.data.video_data.status === 'done' || res.data.video_data.status === 'error' || res.data.video_data.status === 'media_not_found') {
                             clearInterval(this.apiLoop);
@@ -322,6 +334,29 @@ class Dashboard extends React.Component {
             this.setState({playing: false})
             this.player.seekTo(start_seconds, 'seconds')
         }
+    }
+
+    startRecording = () => {
+        this.setState({record: true});
+    }
+
+    stopRecording = () => {
+        this.setState({record: false});
+    }
+
+    onData(recordedBlob) {
+        console.log('chunk of real-time data is: ', recordedBlob);
+    }
+
+    onSave = async (blobObject) => {
+        let file = await new File([blobObject.blob], "record.webm");
+        this.setState({downloadURL: blobObject.blobURL})
+        this.setState({audio_file: file})
+    }
+
+
+    onStop(recordedBlob) {
+        console.log('recordedBlob is: ', recordedBlob);
     }
 
 
@@ -384,11 +419,18 @@ class Dashboard extends React.Component {
                                 <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
                                 <Title>
                                     <Button
-                                        type="primary" icon={<DownloadOutlined/>} size='large'
+                                        type="primary" icon={<DownloadOutlined/>}
                                         download='video'
                                         href={this.state.processed_video}
                                         style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>
+
+                                    <Button
+                                        type="primary" icon={<DownloadOutlined/>}
+                                        download='subtitle.srt'
+                                        href={this.state.subtitle}
+                                        style={{textDecoration: 'none', color: 'white'}}>Download
+                                        Subtitle</Button>
 
                                 </Title>
                             </Typography>
@@ -424,6 +466,7 @@ class Dashboard extends React.Component {
                             dataSource={this.state.chunks}
                             columns={this.columns}/>
                     </Row>
+
                     <Modal
                         title="Change Audio"
                         visible={this.state.visible}
@@ -440,53 +483,107 @@ class Dashboard extends React.Component {
                         }
                         okText={uploading ? 'Uploading' : 'Start Upload'}
                         onCancel={this.handleCancel}
+                        width={'60%'}
                     >
-                        <ReactPlayer
-                            controls={false}
-                            playing={this.state.playing}
-                            onProgress={this.pauseVideo}
-                            ref={this.ref}
-                            width='100%'
-                            url={this.state.processed_video}/>
-                        <br/>
-                        <div style={{textAlign: 'center'}}>
+                        <Row gutter={16}>
+                            <Col span={12}>
 
-                            <Button
-                                size='large'
-                                type="primary"
-                                shape="round"
-                                icon={this.state.playing ? <PauseOutlined/> : <CaretRightOutlined/>}
-                                onClick={this.togglePlayButton}
-                            />
-                        </div>
+                                <ReactPlayer
+                                    controls={false}
+                                    playing={this.state.playing}
+                                    onProgress={this.pauseVideo}
+                                    ref={this.ref}
+                                    width='100%'
+                                    url={this.state.processed_video}/>
+                                <br/>
+                                <div style={{textAlign: 'center'}}>
+
+                                    <Button
+                                        size='large'
+                                        type="primary"
+                                        shape="round"
+                                        icon={this.state.playing ? <PauseOutlined/> : <CaretRightOutlined/>}
+                                        onClick={this.togglePlayButton}
+                                    />
+                                </div>
+                            </Col>
+                            <Col span={12}>
+                                <Tabs size='large' type="card">
+                                    <TabPane tab="Upload" key="1">
+                                        <Dropzone
+                                            initialFiles={[]}
+                                            canRemove={false}
+                                            className="fileUploader"
+                                            onChangeStatus={this.handleChangeStatus}
+                                            accept=".mp3"
+                                            multiple={false}
+                                            autoUpload={false}
+                                            maxFiles={1}
+                                            styles={{
+                                                dropzoneActive: {
+                                                    'height': '60%'
+                                                }
+                                            }}
+                                            inputContent="Drag Audio or Click to Browse"
+                                        />
+                                    </TabPane>
+                                    <TabPane tab="Record" key="2">
+                                        <div>
+                                            <ReactMic
+                                                record={this.state.record}
+                                                className="sound-wave"
+                                                onStop={this.onStop}
+                                                onData={this.onData}
+                                                onSave={this.onSave}
+                                                strokeColor="#000000"
+                                                backgroundColor="white"
 
 
-                        <Divider/>
-                        <Dropzone
-                            initialFiles={[]}
-                            canRemove={false}
-                            className="fileUploader"
-                            onChangeStatus={this.handleChangeStatus}
-                            accept=".mp3"
-                            multiple={false}
-                            autoUpload={false}
-                            maxFiles={1}
-                            inputContent="Drag Audio or Click to Browse"
-                        />
-                        <Divider/>
-                        <Text>Subititle</Text>
-                        {
-                            status === 'done' ?
-                                <Input.TextArea allowClear
-                                                autoSize
-                                                value={this.state.selected_chunk_sub}
-                                                onChange={this.handleChange}
-                                />
-                                :
-                                null
+                                            />
+                                            <Space>
+                                                <Button type="primary" shape="round"
+                                                        onClick={this.startRecording}
+                                                        disabled={this.state.record===true}
+                                                > Start </Button>
+                                                <Button type="primary" shape="round"
+                                                        onClick={this.stopRecording}
+                                                        disabled={this.state.record===false}
+
+                                                > Stop </Button>
+                                                <Button type="primary" shape="round" disabled={this.state.downloadURL===''} href={this.state.downloadURL}
+                                                        download="recording.webm">Download</Button>
+                                            </Space>
+                                            {this.state.downloadURL?
+                                                <div>
+                                                    <Divider/>
+
+                                                    <ReactAudioPlayer
+                                                        src={this.state.downloadURL}
+                                                        controls
+                                                    />
+                                                </div>
+                                           :null}
+
+                                        </div>
+                                    </TabPane>
+                                </Tabs>
+
+                                <Divider/>
+                                <Text>Subititle</Text>
+                                {
+                                    status === 'done' ?
+                                        <Input.TextArea allowClear
+                                                        autoSize
+                                                        value={this.state.selected_chunk_sub}
+                                                        onChange={this.handleChange}
+                                        />
+                                        :
+                                        null
 
 
-                        }
+                                }</Col>
+                        </Row>
+
 
                     </Modal>
 

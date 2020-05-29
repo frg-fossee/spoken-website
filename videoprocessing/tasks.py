@@ -184,6 +184,10 @@ def process_video(video_id):
 def new_audio_trim(chunk):
     chunk_file = chunk['audio_chunk'].split('/')[-1]
     old_chunk_file = chunk['history'][1]['audio_chunk'].split('/')[-1]
+    old_subtitle = chunk['history'][1]['subtitle']
+    new_subtitle = chunk['subtitle']
+    ext = '.' + chunk_file.split('.')[-1]
+    chunk_file_name = chunk_file.split('.')[0]
 
     print('old', old_chunk_file)
     print('new', chunk_file)
@@ -194,11 +198,24 @@ def new_audio_trim(chunk):
 
     fp = open(CHUNKS_LIST_FILE_NAME, 'r')
     chunk_list = str(fp.read())
-    chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file + "'", 'file ' + "'" + chunk_file + "'")
+    if ext == '.webm':
+        chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file + "'",
+                                        'file ' + "'" + chunk_file_name + AUDIO_FILE_EXTENSION + "'")
+    else:
+        chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file + "'", 'file ' + "'" + chunk_file + "'")
     print(chunk_list)
     fp.close()
     fp = open(CHUNKS_LIST_FILE_NAME, 'w')
     fp.write(chunk_list)
+    fp.close()
+
+    # modify subtitle file
+    fp = open('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, 'r')
+    subtitle_list = str(fp.read())
+    subtitle_list = subtitle_list.replace(old_subtitle, new_subtitle)
+    fp.close()
+    fp = open('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, 'w')
+    fp.write(subtitle_list)
     fp.close()
 
     start_time = chunk['start_time']
@@ -208,6 +225,16 @@ def new_audio_trim(chunk):
     VideoTutorial.objects.filter(pk=video_id).update(status='in_queue')
 
     diff = datetime.strptime(end_time, time_format) - datetime.strptime(start_time, time_format)
+    if (ext == '.webm'):
+        # webm support
+        print('webm')
+        os.system(
+            'ffmpeg -i ' + chunk_file + ' -vn -c:a libmp3lame -ar ' + AUDIO_SAMPLE_RATE + ' -ab ' + AUDIO_BIT_RATE + ' ' + chunk_file_name + AUDIO_FILE_EXTENSION)
+        chunk_file = chunk_file_name + AUDIO_FILE_EXTENSION
+        obj = VideoChunk.objects.get(VideoTutorial=video_id, chunk_no=chunk['chunk_no'])
+        obj.audio_chunk = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, CHUNKS_DIRECTORY,
+                                       chunk_file_name + AUDIO_FILE_EXTENSION)
+        obj.save()
 
     os.rename(chunk_file, 'temp' + AUDIO_FILE_EXTENSION)
     os.system('ffmpeg -i temp' + AUDIO_FILE_EXTENSION +
@@ -266,7 +293,7 @@ def compile_all_chunks(video_id):
 
     command = 'ffmpeg -y -f concat -safe 0 -i ' + \
               CHUNKS_LIST_FILE_NAME + \
-              ' -c copy ' + audio_filename
+              ' -c:a libmp3lame ' + audio_filename
 
     os.system(command)
 

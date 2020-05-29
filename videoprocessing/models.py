@@ -71,7 +71,7 @@ def validate_subtitle(value):
 def validate_audio(value):
     """Checking if the uploaded audio has .mp3 extension and it don't exist"""
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
-    valid_extensions = ['.mp3']
+    valid_extensions = ['.mp3', '.webm']
 
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension.')

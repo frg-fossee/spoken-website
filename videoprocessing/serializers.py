@@ -50,16 +50,26 @@ class VideoSerializer(serializers.ModelSerializer):
 
 class VideoChunkSerializer(serializers.ModelSerializer):
     """Serializer to list all chunks of a particular project"""
+    revisions = serializers.SerializerMethodField()
+
+    def get_revisions(self, obj):
+        model = obj.history.__dict__['model']
+        serializer = VideoChunkHistory(model, obj.history.all().order_by('-history_date'),  many=True)
+        serializer.is_valid()
+        return len(serializer.data)
 
     class Meta:
         model = VideoChunk
         fields = [
             'chunk_no',
-            # 'video_chunk',
             'audio_chunk',
             'start_time',
             'end_time',
-            'subtitle'
+            'subtitle',
+            'revisions'
+        ]
+        read_only_fields = [
+            'revisions',
         ]
 
 

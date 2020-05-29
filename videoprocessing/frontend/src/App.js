@@ -7,8 +7,6 @@ import {instanceOf} from 'prop-types';
 import {Cookies, withCookies} from 'react-cookie';
 import axios from "axios";
 
-
-
 class App extends React.Component {
     static propTypes = {
         cookies: instanceOf(Cookies).isRequired
@@ -25,6 +23,8 @@ class App extends React.Component {
         axios.defaults.headers.common['X-CSRFToken'] = this.state.csrftoken // for all requests
 
     }
+
+
 
 
     render() {
