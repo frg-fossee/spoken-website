@@ -231,10 +231,10 @@ def new_audio_trim(chunk):
         os.system(
             'ffmpeg -i ' + chunk_file + ' -vn -c:a libmp3lame -ar ' + AUDIO_SAMPLE_RATE + ' -ab ' + AUDIO_BIT_RATE + ' ' + chunk_file_name + AUDIO_FILE_EXTENSION)
         chunk_file = chunk_file_name + AUDIO_FILE_EXTENSION
-        obj = VideoChunk.objects.get(VideoTutorial=video_id, chunk_no=chunk['chunk_no'])
-        obj.audio_chunk = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, CHUNKS_DIRECTORY,
-                                       chunk_file_name + AUDIO_FILE_EXTENSION)
-        obj.save()
+        # obj = VideoChunk.objects.get(VideoTutorial=video_id, chunk_no=chunk['chunk_no'])
+        # obj.audio_chunk = os.path.join(settings.VIDEO_PROCESSING_ROOT, video_id, CHUNKS_DIRECTORY,
+        #                                chunk_file_name + AUDIO_FILE_EXTENSION)
+        # obj.save()
 
     os.rename(chunk_file, 'temp' + AUDIO_FILE_EXTENSION)
     os.system('ffmpeg -i temp' + AUDIO_FILE_EXTENSION +
