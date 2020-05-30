@@ -2,6 +2,9 @@ import React from "react";
 import {withRouter} from "react-router-dom";
 import qs from 'qs'
 import {ReactMic} from 'react-mic';
+import {Player} from 'video-react';
+import "../../../node_modules/video-react/dist/video-react.css"; // import css
+import ReactHtmlParser from 'react-html-parser';
 
 import axios from 'axios'
 import {
@@ -17,7 +20,7 @@ import {
     Row,
     Skeleton, Space,
     Table,
-    Tabs,
+    Tabs, Timeline,
     Typography,
 } from 'antd';
 import ReactAudioPlayer from 'react-audio-player';
@@ -73,8 +76,9 @@ class Dashboard extends React.Component {
             revertChunkSelected: '',
             subtitle: '',
             downloadURL: '',
+            currentRunningChunk: null,
             remove: () => {
-                console.log('nothing to remove')
+                // console.log('nothing to remove')
             },
             record: false
         }
@@ -87,7 +91,7 @@ class Dashboard extends React.Component {
             this.setState({revertModalVisible: true, revisionData: [], revertChunkSelected: chunk_no})
             axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}`)
                 .then((res) => {
-                    console.log(res.data.history)
+                    // console.log(res.data.history)
                     this.setState({revisionData: res.data.history})
 
                 })
@@ -116,7 +120,7 @@ class Dashboard extends React.Component {
                 status: 'Uploading'
             });
             const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
-            console.log(audio_file)
+            // console.log(audio_file)
             const formData = new FormData();
             formData.append('audio_chunk', audio_file);
             formData.append('subtitle', selected_chunk_sub)
@@ -127,8 +131,8 @@ class Dashboard extends React.Component {
                 })
                 .then(() => this.handleCancel())
                 .catch((error) => {
-                    console.log(error.response)
-                    this.setState({uploading: false, status:'done'});
+                    // console.log(error.response)
+                    this.setState({uploading: false, status: 'done'});
                     this.handleCancel()
                     this.openNotificationWithIcon('Duplicate File', 'You have already uploaded this audio, Simply revert back', 'warning')
 
@@ -175,9 +179,9 @@ class Dashboard extends React.Component {
                 dataIndex: 'subtitle',
                 key: 'subtitle',
                 width: '55%',
-                // render: (value) => {
-                //     return (ReactHtmlParser(value))
-                // },
+                render: (value) => {
+                    return (ReactHtmlParser(value))
+                },
                 sorter: (a, b) => a.subtitle.localeCompare(b.subtitle),
                 sortDirections: ['descend', 'ascend']
             },
@@ -185,7 +189,8 @@ class Dashboard extends React.Component {
                 title: 'Change Audio/Subtitle',
                 width: '10%',
                 render: (value) => {
-                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)} disabled={this.state.status!=='done'}>Change
+                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)}
+                                    disabled={this.state.status !== 'done'}>Change
                             Audio / Subtitle</Button>
                     )
                 }
@@ -194,10 +199,10 @@ class Dashboard extends React.Component {
                 title: 'Revert',
                 width: '10%',
                 render: (value) => {
-                    console.log(value.revisions)
+                    // console.log(value.revisions)
                     return (<Button icon={<RollbackOutlined/>}
                                     onClick={() => this.revertShowModal(value.chunk_no)}
-                                    disabled={value.revisions <= 1 || this.state.status!=='done'}>Revert </Button>
+                                    disabled={value.revisions <= 1 || this.state.status !== 'done'}>Revert </Button>
                     )
                 }
             },
@@ -205,24 +210,26 @@ class Dashboard extends React.Component {
         this.changeAudioShowModal = (chunk) => {
             this.state.remove()
             let sutitle = this.state.chunks[chunk]['subtitle']
-            let start_time = this.state.chunks[chunk]['start_time']
+            let current_chunk = chunk - 1 >= 0 ? chunk - 1 : chunk
+            let start_time = this.state.chunks[current_chunk]['start_time']
+
             setTimeout((chunk) => {
                 let a = start_time.split(':');
                 let seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
-                console.log(seconds)
+                // console.log(seconds)
                 this.player.seekTo(seconds, 'seconds')
                 // this.player.showPreview()
 
-            }, 1000)
+            }, 500)
             this.setState({
                 visible: true,
                 selected_chunk: chunk,
-                selected_chunk_sub: sutitle
+                selected_chunk_sub: sutitle,
             });
         };
 
         this.handleOk = e => {
-            console.log(e);
+            // console.log(e);
             this.setState({
                 visible: false,
             });
@@ -244,11 +251,12 @@ class Dashboard extends React.Component {
                     this.setState({uploading: false});
                 })
                 .then(() => this.revertHandleCancel())
+
         }
 
         this.handleCancel = e => {
 
-            console.log(e);
+            // console.log(e);
             this.setState({playing: false})
             this.setState({
                 audio_file: '',
@@ -261,7 +269,7 @@ class Dashboard extends React.Component {
             this.apiLoop = setInterval(() => {
                 axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}`)
                     .then((res) => {
-                        console.log(res.data)
+                        // console.log(res.data)
                         this.setState({
                             current_count: res.data.chunks.length,
                             chunks: res.data.chunks,
@@ -294,7 +302,7 @@ class Dashboard extends React.Component {
                             message: 'Error Occurred',
                             description: error.response ? `Status: ${error.response.status} \n ${error.response.statusText}` : 'Some Error Occurred',
                             onClick: () => {
-                                console.log('Notification Clicked!');
+                                // console.log('Notification Clicked!');
                             },
                         });
                         this.setState({status: 'not found', progress_status: 'exception'})
@@ -319,15 +327,90 @@ class Dashboard extends React.Component {
 
     pauseVideo = video => {
         let chunk = this.state.selected_chunk
+        let current_running_chunk = chunk - 1 >= 0 ? chunk - 1 : chunk
 
-        let start_time = this.state.chunks[chunk]['start_time']
+        let start_time = this.state.chunks[current_running_chunk]['start_time']
         let a = start_time.split(':');
         let start_seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+        let total_chunks = this.state.total_count
 
-        let end_time = this.state.chunks[chunk]['end_time']
+        let end_time = chunk + 1 < total_chunks ? this.state.chunks[chunk + 1]['end_time'] : this.state.chunks[chunk]['end_time']
         a = end_time.split(':');
         let end_seconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
         // this.player.showPreview()
+
+        // now change the current running chunk here
+        if (chunk - 1 < 0) {
+            //no prevous
+            let {playedSeconds} = video;
+
+            let current = this.state.chunks[chunk]['end_time'];
+            a = current.split(':')
+            let currentSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+            let next = this.state.chunks[chunk + 1]['end_time'];
+            a = next.split(':')
+            let nextSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+
+            if (playedSeconds > 0 && playedSeconds < currentSeconds) {
+                this.setState({currentRunningChunk: chunk})
+            }
+            if (playedSeconds > currentSeconds && playedSeconds < nextSeconds) {
+                // console.log('hello')
+                this.setState({currentRunningChunk: chunk + 1})
+            }
+        } else if (chunk + 1 >= total_chunks) {
+            //no next
+            let {playedSeconds} = video;
+
+            let prev = this.state.chunks[chunk - 1]['end_time'];
+            let a = prev.split(':')
+            let prevSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+            let current = this.state.chunks[chunk]['end_time'];
+            a = current.split(':')
+            let currentSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+
+            if (playedSeconds > 0 && playedSeconds < prevSeconds) {
+                this.setState({currentRunningChunk: chunk - 1})
+            }
+
+            if (playedSeconds > prevSeconds && playedSeconds < currentSeconds) {
+                this.setState({currentRunningChunk: chunk})
+            }
+
+        } else {
+            //both
+            let {playedSeconds} = video;
+            // console.log('ksdflkdjflkdsjflkdsjflkdjfldkfj')
+
+            let prev = this.state.chunks[chunk - 1]['end_time'];
+            let a = prev.split(':')
+            let prevSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+            let current = this.state.chunks[chunk]['end_time'];
+            a = current.split(':')
+            let currentSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+
+            let next = this.state.chunks[chunk + 1]['end_time'];
+            a = next.split(':')
+            let nextSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+            if (playedSeconds > 0 && playedSeconds < prevSeconds) {
+                this.setState({currentRunningChunk: chunk - 1})
+            }
+
+            if (playedSeconds > prevSeconds && playedSeconds < currentSeconds) {
+                this.setState({currentRunningChunk: chunk})
+            }
+            if (playedSeconds > currentSeconds && playedSeconds < nextSeconds) {
+                // console.log('hello')
+                this.setState({currentRunningChunk: chunk + 1})
+            }
+
+
+        }
 
 
         if (Math.floor(video.playedSeconds) === end_seconds) {
@@ -345,7 +428,7 @@ class Dashboard extends React.Component {
     }
 
     onData(recordedBlob) {
-        console.log('chunk of real-time data is: ', recordedBlob);
+        // console.log('chunk of real-time data is: ', recordedBlob);
     }
 
     onSave = async (blobObject) => {
@@ -356,7 +439,7 @@ class Dashboard extends React.Component {
 
 
     onStop(recordedBlob) {
-        console.log('recordedBlob is: ', recordedBlob);
+        // console.log('recordedBlob is: ', recordedBlob);
     }
 
 
@@ -421,6 +504,7 @@ class Dashboard extends React.Component {
                                     <Button
                                         type="primary" icon={<DownloadOutlined/>}
                                         download='video'
+                                        disabled={this.state.status !== 'done'}
                                         href={this.state.processed_video}
                                         style={{textDecoration: 'none', color: 'white'}}>Download
                                         Tutorial</Button>
@@ -428,6 +512,7 @@ class Dashboard extends React.Component {
                                     <Button
                                         type="primary" icon={<DownloadOutlined/>}
                                         download='subtitle.srt'
+                                        disabled={this.state.status !== 'done'}
                                         href={this.state.subtitle}
                                         style={{textDecoration: 'none', color: 'white'}}>Download
                                         Subtitle</Button>
@@ -448,11 +533,26 @@ class Dashboard extends React.Component {
                              span={8}>
 
                             {
-                                this.state.status === 'done' ? <ReactPlayer
-
-
+                                this.state.status === 'done' ?
+                                    <Player
+                                        fluid={false}
+                                        preload='auto'
                                         height={200}
-                                        url={this.state.processed_video} controls/> :
+                                        playsInline
+                                        src={this.state.processed_video}
+                                    />
+
+                                    // <VideoPlayer
+                                    //     autoplay={false}
+                                    //     controls={true}
+                                    //     preload="auto"
+                                    //     // width={200}
+                                    //     sources={[{
+                                    //         src: this.state.processed_video,
+                                    //         type: 'video/mp4'
+                                    //     }]}
+                                    // />
+                                    :
                                     <Skeleton.Input style={{height: '200px'}} active/>
                             }
 
@@ -485,16 +585,42 @@ class Dashboard extends React.Component {
                         onCancel={this.handleCancel}
                         width={'60%'}
                     >
-                        <Row gutter={16}>
-                            <Col span={12}>
+                        <Row gutter={24}>
+                            <Col span={6}>
+                                <Timeline mode='left'>
+                                    {this.state.selected_chunk - 1 >= 0 ?
+                                        <Timeline.Item
+                                            className={this.state.selected_chunk - 1 === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
+                                            label={<h4>Previous Chunk</h4>}>
+                                            {ReactHtmlParser(this.state.chunks[this.state.selected_chunk - 1].subtitle)}
+                                        </Timeline.Item> : null
+                                    }
+                                    <Timeline.Item
+                                        className={this.state.selected_chunk === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
+                                        label={<h4>Current
+                                            Chunk</h4>}>{ReactHtmlParser(this.state.selected_chunk_sub)}</Timeline.Item>
+                                    {
+                                        this.state.selected_chunk + 1 < this.state.total_count ?
+                                            <Timeline.Item
+                                                className={this.state.selected_chunk + 1 === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
+                                                label={<h4>Next Chunk</h4>}>
+                                                {ReactHtmlParser(this.state.chunks[this.state.selected_chunk + 1].subtitle)}
+                                            </Timeline.Item> : null
+
+                                    }
+                                </Timeline>
+                            </Col>
+                            <Col span={8}>
 
                                 <ReactPlayer
+                                    preload='auto'
                                     controls={false}
                                     playing={this.state.playing}
                                     onProgress={this.pauseVideo}
                                     ref={this.ref}
                                     width='100%'
                                     url={this.state.processed_video}/>
+
                                 <br/>
                                 <div style={{textAlign: 'center'}}>
 
@@ -504,10 +630,10 @@ class Dashboard extends React.Component {
                                         shape="round"
                                         icon={this.state.playing ? <PauseOutlined/> : <CaretRightOutlined/>}
                                         onClick={this.togglePlayButton}
-                                    />
+                                    >{this.state.playing ? 'Pause' : 'Play'}</Button>
                                 </div>
                             </Col>
-                            <Col span={12}>
+                            <Col span={10}>
                                 <Tabs size='large' type="card">
                                     <TabPane tab="Upload" key="1">
                                         <Dropzone
@@ -519,11 +645,6 @@ class Dashboard extends React.Component {
                                             multiple={false}
                                             autoUpload={false}
                                             maxFiles={1}
-                                            styles={{
-                                                dropzoneActive: {
-                                                    'height': '60%'
-                                                }
-                                            }}
                                             inputContent="Drag Audio or Click to Browse"
                                         />
                                     </TabPane>
@@ -543,17 +664,19 @@ class Dashboard extends React.Component {
                                             <Space>
                                                 <Button type="primary" shape="round"
                                                         onClick={this.startRecording}
-                                                        disabled={this.state.record===true}
+                                                        disabled={this.state.record === true}
                                                 > Start </Button>
                                                 <Button type="primary" shape="round"
                                                         onClick={this.stopRecording}
-                                                        disabled={this.state.record===false}
+                                                        disabled={this.state.record === false}
 
                                                 > Stop </Button>
-                                                <Button type="primary" shape="round" disabled={this.state.downloadURL===''} href={this.state.downloadURL}
+                                                <Button type="primary" shape="round"
+                                                        disabled={this.state.downloadURL === ''}
+                                                        href={this.state.downloadURL}
                                                         download="recording.webm">Download</Button>
                                             </Space>
-                                            {this.state.downloadURL?
+                                            {this.state.downloadURL ?
                                                 <div>
                                                     <Divider/>
 
@@ -562,7 +685,7 @@ class Dashboard extends React.Component {
                                                         controls
                                                     />
                                                 </div>
-                                           :null}
+                                                : null}
 
                                         </div>
                                     </TabPane>

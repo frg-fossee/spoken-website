@@ -28,3 +28,10 @@
   height: 143px;
   margin-top: -114px;
 }
+
+.selected-chunk {
+  /*font-size: 130%;*/
+  /*font-weight: bold*/
+  color: #1890ff;
+  font-weight: bold;
+}

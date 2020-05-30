@@ -198,7 +198,7 @@ class TutorialsListPage extends React.Component {
                 .then(res => {
                     let data = res.data
                     data.map((tut) => {
-                        console.log(tut)
+                        // console.log(tut)
                         for (let i = 0; i < filtered_tuts.length; i++) {
                             if (filtered_tuts[i].tutorial_id === tut.tutorial_detail && filtered_tuts[i].language_id === tut.language) {
                                 filtered_tuts[i].isEdited = true
@@ -224,7 +224,7 @@ class TutorialsListPage extends React.Component {
     }
 
     render() {
-        console.log(this.props.fosses)
+        // console.log(this.props.fosses)
         return (
             <div>
                 <Breadcrumb>

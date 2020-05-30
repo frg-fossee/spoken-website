@@ -28,9 +28,8 @@ class RevertModal extends React.Component {
 
     handleChangeCompare = (value, type) => {
 
-        console.log(value, type)
+        // console.log(value, type)
         const subtitle = this.props.dataSource[value].subtitle
-        const d = new Date(this.props.dataSource[value].history_date)
 
         if (type === 'old') {
             this.setState({
@@ -56,11 +55,6 @@ class RevertModal extends React.Component {
     }
 
 
-    componentDidMount() {
-        const history = this.props.dataSource;
-
-
-    }
 
     render() {
 
@@ -108,7 +102,7 @@ class RevertModal extends React.Component {
                         onConfirm={() => revertChunk(value.history_id, chunk_no)} title="Are you sure?"
                         okText="Yes"
                         cancelText="No"
-                        disabled={index == 0}
+                        disabled={index === 0}
                     >
                         <Button size='middle' type="primary"
                                 disabled={index === 0}>Revert</Button>
@@ -140,8 +134,7 @@ class RevertModal extends React.Component {
                                 onChange={(e) => this.handleChangeCompare(e, 'old')} style={{width: 240}}>
                                 {
                                     dataSource.map((item, idx) => {
-                                        console.log(item)
-                                        const d = new Date(item.history_date)
+                                        // console.log(item)
                                         return (<Option
 
                                             key={item.history_id}
@@ -158,8 +151,7 @@ class RevertModal extends React.Component {
                                 style={{width: 240}}>
                                 {
                                     dataSource.map((item, idx) => {
-                                        console.log(item)
-                                        const d = new Date(item.history_date)
+                                        // console.log(item)
                                         return (<Option
                                             key={item.history_id}
                                             value={idx}>
