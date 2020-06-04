@@ -77,6 +77,7 @@ class Dashboard extends React.Component {
             subtitle: '',
             downloadURL: '',
             currentRunningChunk: null,
+            isUploadDisabled: true,
             remove: () => {
                 // console.log('nothing to remove')
             },
@@ -84,7 +85,7 @@ class Dashboard extends React.Component {
         }
         this.handleChange = (e) => {
             let value = e.target.value
-            this.setState({selected_chunk_sub: value});
+            this.setState({selected_chunk_sub: value, isUploadDisabled:false});
 
         }
         this.revertShowModal = (chunk_no) => {
@@ -108,7 +109,7 @@ class Dashboard extends React.Component {
 
         this.handleChangeStatus = ({meta, file, remove}, status) => {
             if (status !== 'rejected_file_type') {
-                this.setState({audio_file: file, remove: remove})
+                this.setState({audio_file: file, remove: remove,isUploadDisabled: false})
             } else {
                 this.openNotificationWithIcon('Unsupported File', 'You can only upload .mp3 files', 'warning')
             }
@@ -122,7 +123,9 @@ class Dashboard extends React.Component {
             const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
             // console.log(audio_file)
             const formData = new FormData();
-            formData.append('audio_chunk', audio_file);
+            if(audio_file){
+                formData.append('audio_chunk', audio_file);
+            }
             formData.append('subtitle', selected_chunk_sub)
             axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${selected_chunk}`, formData)
                 .then(() => {
@@ -179,9 +182,9 @@ class Dashboard extends React.Component {
                 dataIndex: 'subtitle',
                 key: 'subtitle',
                 width: '55%',
-                render: (value) => {
-                    return (ReactHtmlParser(value))
-                },
+                // render: (value) => {
+                //     return (ReactHtmlParser(value))
+                // },
                 sorter: (a, b) => a.subtitle.localeCompare(b.subtitle),
                 sortDirections: ['descend', 'ascend']
             },
@@ -225,6 +228,7 @@ class Dashboard extends React.Component {
                 visible: true,
                 selected_chunk: chunk,
                 selected_chunk_sub: sutitle,
+                isUploadDisabled: true
             });
         };
 
@@ -572,11 +576,9 @@ class Dashboard extends React.Component {
                         visible={this.state.visible}
                         onOk={this.handleOk}
                         okButtonProps={{
-
-
                             type: "primary",
                             onClick: this.handleUpload,
-                            disabled: audio_file.length === 0,
+                            disabled: this.state.isUploadDisabled,
                             loading: uploading,
                             style: {marginTop: 16}
                         }
@@ -588,23 +590,29 @@ class Dashboard extends React.Component {
                         <Row gutter={24}>
                             <Col span={6}>
                                 <Timeline mode='left'>
-                                    {this.state.selected_chunk - 1 >= 0 ?
+                                    {this.state.selected_chunk - 1 >= 0 && status === 'done' ?
                                         <Timeline.Item
                                             className={this.state.selected_chunk - 1 === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
                                             label={<h4>Previous Chunk</h4>}>
-                                            {ReactHtmlParser(this.state.chunks[this.state.selected_chunk - 1].subtitle)}
+                                            {this.state.chunks[this.state.selected_chunk - 1].subtitle}
                                         </Timeline.Item> : null
                                     }
-                                    <Timeline.Item
-                                        className={this.state.selected_chunk === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
-                                        label={<h4>Current
-                                            Chunk</h4>}>{ReactHtmlParser(this.state.selected_chunk_sub)}</Timeline.Item>
                                     {
-                                        this.state.selected_chunk + 1 < this.state.total_count ?
+                                        status === 'done' ?
+                                            <Timeline.Item
+                                                className={this.state.selected_chunk === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
+                                                label={<h4>Current
+                                                    Chunk</h4>}>{this.state.selected_chunk_sub}</Timeline.Item> :
+                                            null
+
+                                    }
+
+                                    {
+                                        this.state.selected_chunk + 1 < this.state.total_count && status === 'done' ?
                                             <Timeline.Item
                                                 className={this.state.selected_chunk + 1 === this.state.currentRunningChunk && this.state.playing ? 'selected-chunk' : null}
                                                 label={<h4>Next Chunk</h4>}>
-                                                {ReactHtmlParser(this.state.chunks[this.state.selected_chunk + 1].subtitle)}
+                                                {this.state.chunks[this.state.selected_chunk + 1].subtitle}
                                             </Timeline.Item> : null
 
                                     }
