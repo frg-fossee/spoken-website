@@ -66,7 +66,7 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
             language_id = request.data['language']
             if is_tutorial_allotted(self.request.user, tutorial_id, language_id):
 
-                if VideoTutorial.objects.filter(tutorial_detail=tutorial_id,language=language_id):
+                if VideoTutorial.objects.filter(tutorial_detail=tutorial_id, language=language_id):
                     return Response(status=status.HTTP_409_CONFLICT)
 
                 tutorial_detail_object = TutorialDetail.objects.get(pk=tutorial_id)
@@ -158,6 +158,13 @@ class ChangeAudio(generics.RetrieveUpdateAPIView):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = ChangeAudioSerializer(instance, data=request.data)
+        try:
+            request.data['audio_chunk']
+        except KeyError:
+            instance.subtitle = request.data['subtitle']
+            instance.save()
+            return Response(status=status.HTTP_200_OK)
+
         if serializer.is_valid():
             serializer.save()
             new_audio_trim.delay(serializer.data)

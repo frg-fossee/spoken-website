@@ -187,6 +187,8 @@ def new_audio_trim(chunk):
     old_subtitle = chunk['history'][1]['subtitle']
     new_subtitle = chunk['subtitle']
     ext = '.' + chunk_file.split('.')[-1]
+    old_ext = '.' + old_chunk_file.split('.')[-1]
+    old_chunk_file_name = old_chunk_file.split('.')[0]
     chunk_file_name = chunk_file.split('.')[0]
 
     print('old', old_chunk_file)
@@ -198,6 +200,13 @@ def new_audio_trim(chunk):
 
     fp = open(CHUNKS_LIST_FILE_NAME, 'r')
     chunk_list = str(fp.read())
+    if old_ext == '.webm':
+        chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file_name + AUDIO_FILE_EXTENSION + "'",
+                                        'file ' + "'" + chunk_file + "'")
+
+    if old_ext == '.webm' and ext == '.webm':
+        chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file_name + AUDIO_FILE_EXTENSION + "'",
+                                        'file ' + "'" + chunk_file_name + AUDIO_FILE_EXTENSION + "'")
     if ext == '.webm':
         chunk_list = chunk_list.replace('file ' + "'" + old_chunk_file + "'",
                                         'file ' + "'" + chunk_file_name + AUDIO_FILE_EXTENSION + "'")
@@ -210,13 +219,10 @@ def new_audio_trim(chunk):
     fp.close()
 
     # modify subtitle file
-    fp = open('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, 'r')
-    subtitle_list = str(fp.read())
-    subtitle_list = subtitle_list.replace(old_subtitle, new_subtitle)
-    fp.close()
-    fp = open('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, 'w')
-    fp.write(subtitle_list)
-    fp.close()
+    subs = pysrt.open('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='utf-8')
+    old_text = subs[chunk['chunk_no']]
+    old_text.text = new_subtitle
+    subs.save('../' + SUBTITLE_FILE_NAME + SUBTITLE_FILE_EXTENSION, encoding='utf-8')
 
     start_time = chunk['start_time']
     end_time = chunk['end_time']
