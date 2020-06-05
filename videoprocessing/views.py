@@ -8,10 +8,12 @@ from rest_framework import generics, mixins, status, exceptions
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from creation.models import ContributorRole, TutorialDetail, Language, TutorialResource
+from creation.models import ContributorRole, TutorialDetail, Language, TutorialResource, DomainReviewerRole, \
+    FossCategory
 from videoprocessing.models import VideoTutorial, VideoChunk
-from videoprocessing.permissions import is_tutorial_allotted, IsContributor
+from videoprocessing.permissions import is_tutorial_allotted, IsContributor, IsDomainReviewer
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer, \
     ChangeAudioSerializer
 from videoprocessing.tasks import fetch_video_generate_checksum, new_audio_trim
@@ -26,7 +28,7 @@ def index(request):
     return redirect('%s?next=%s' % ('/accounts/login/', request.path))
 
 
-# All the APIs
+# Contributor APIs
 
 class ContributorTutorialsList(generics.ListAPIView):
     """
@@ -78,10 +80,14 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
                 print(src)
                 file = TutorialResource.objects.get(tutorial_detail_id=tutorial_id, language_id=language_id)
                 video_file_extension = "." + file.video.split('.')[-1]
-
-                serializer = VideoSerializer(data=request.data)
+                data = request.data
+                data['foss'] = foss_id
+                print(data)
+                serializer = VideoSerializer(data=data)
                 if serializer.is_valid():
                     obj = serializer.save(user=request.user)
+                    obj.foss = FossCategory.objects.get(id=foss_id)
+                    obj.save()
                     fetch_video_generate_checksum.delay(obj.id, src, video_file_extension)
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -199,3 +205,49 @@ class RevertChunk(generics.UpdateAPIView):
                 return Response({'details': 'Chunk already upto date'}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubmitForReview(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsContributor]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            pk = self.kwargs['pk']
+            print(pk)
+            video = VideoTutorial.objects.get(pk=pk, user=request.user)
+            print(video.submission_status)
+            if video.submission_status == 'draft':
+                video.submission_status = 'submitted'
+                serializer = VideoSerializer(video)
+                video.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'details': 'request already submitted'}, status=status.HTTP_409_CONFLICT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class DomainReviewerTutorialsList(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsDomainReviewer]
+    serializer_class = VideoSerializer
+
+    def get_queryset(self):
+        try:
+            user = self.request.user
+            domains = DomainReviewerRole.objects.filter(user=user, status=True)
+            tuts = None
+
+            for domain in domains:
+                print(domain)
+                x = VideoTutorial.objects.filter(foss_id=domain.foss_category_id, language_id=domain.language_id)
+                if x.count():
+                    if tuts is None:
+                        tuts = x
+                    else:
+                        tuts = tuts | x
+            return tuts
+
+
+        except ContributorRole.DoesNotExist:
+            raise exceptions.NotFound('No Tutorials Found')

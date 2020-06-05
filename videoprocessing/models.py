@@ -9,7 +9,7 @@ from django.db import models
 from rest_framework.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
-from creation.models import TutorialDetail, Language
+from creation.models import TutorialDetail, Language, FossCategory
 
 
 def hash_file(file, block_size=65536):
@@ -123,6 +123,7 @@ class VideoTutorial(models.Model):
                           default=uuid.uuid4,
                           editable=False)
     checksum = models.CharField(max_length=32)
+    foss = models.ForeignKey(FossCategory)
     tutorial_detail = models.ForeignKey(TutorialDetail)
     language = models.ForeignKey(Language)
     status = models.CharField(default='in_queue', max_length=32)
@@ -133,6 +134,13 @@ class VideoTutorial(models.Model):
     total_chunks = models.SmallIntegerField(default=0)
     processed_video = models.FileField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
+    SUBMISSION_STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected')
+    ]
+    submission_status = models.CharField(max_length=9, choices=SUBMISSION_STATUS_CHOICES, default='draft')
 
     def __str__(self):
         return str(self.tutorial_detail)

@@ -4,7 +4,6 @@ import qs from 'qs'
 import {ReactMic} from 'react-mic';
 import {Player} from 'video-react';
 import "../../../node_modules/video-react/dist/video-react.css"; // import css
-import ReactHtmlParser from 'react-html-parser';
 
 import axios from 'axios'
 import {
@@ -545,6 +544,7 @@ class Dashboard extends React.Component {
                                         playsInline
                                         src={this.state.processed_video}
                                     />
+
 
                                     // <VideoPlayer
                                     //     autoplay={false}

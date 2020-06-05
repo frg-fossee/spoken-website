@@ -42,9 +42,9 @@ class VideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoTutorial
-        fields = ['id', 'checksum', 'status', 'tutorial_detail', 'language',
+        fields = ['id', 'checksum', 'status', 'submission_status', 'tutorial_detail', 'foss', 'language',
                   'video', 'subtitle', 'total_chunks', 'processed_video']
-        read_only_fields = ['id', 'checksum', 'status',
+        read_only_fields = ['id', 'checksum', 'status', 'submission_status', 'foss',
                             'video', 'subtitle', 'total_chunks', 'processed_video']
 
 
