@@ -222,6 +222,10 @@ class SubmitForReview(APIView):
             print(video.submission_status)
             if video.submission_status == 'draft':
                 video.submission_status = 'submitted'
+                try:
+                    video.comment = request.data['comment']
+                except IndexError:
+                    pass
                 serializer = VideoSerializer(video)
                 video.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -230,6 +234,7 @@ class SubmitForReview(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+# Domain Reviewer APIs
 class DomainReviewerTutorialsList(generics.ListAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsDomainReviewer]
@@ -255,7 +260,7 @@ class DomainReviewerTutorialsList(generics.ListAPIView):
             raise exceptions.NotFound('No Tutorials Found')
 
 
-class TutorialInfo(APIView):
+class DomainReviewerTutorialInfo(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsDomainReviewer]
     serializer_class = VideoChunkSerializer
@@ -313,6 +318,10 @@ class SetVerdict(APIView):
             if is_foss_allotted(request.user, video_obj.foss, video_obj.language):
                 if request.data['verdict'] == 'accepted' or request.data['verdict'] == 'rejected':
                     video_obj.submission_status = request.data['verdict']
+                    try:
+                        video_obj.comment = request.data['comment']
+                    except IndexError:
+                        pass
                     video_obj.save()
                     serializer = VideoSerializer(video_obj)
                     return Response(serializer.data, status=status.HTTP_200_OK)

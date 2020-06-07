@@ -141,6 +141,7 @@ class VideoTutorial(models.Model):
         ('rejected', 'Rejected')
     ]
     submission_status = models.CharField(max_length=9, choices=SUBMISSION_STATUS_CHOICES, default='draft')
+    comment = models.TextField()
 
     def __str__(self):
         return str(self.tutorial_detail)
