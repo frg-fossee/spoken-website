@@ -54,7 +54,7 @@ class VideoChunkSerializer(serializers.ModelSerializer):
 
     def get_revisions(self, obj):
         model = obj.history.__dict__['model']
-        serializer = VideoChunkHistory(model, obj.history.all().order_by('-history_date'),  many=True)
+        serializer = VideoChunkHistory(model, obj.history.all().order_by('-history_date'), many=True)
         serializer.is_valid()
         return len(serializer.data)
 
@@ -115,3 +115,10 @@ class ChangeAudioSerializer(serializers.ModelSerializer):
             'VideoTutorial',
             'history'
         ]
+
+
+class VerdictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoTutorial
+        fields = ['id', 'submission_status']
+        read_only_fields = ['id', ]

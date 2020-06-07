@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from creation.models import ContributorRole, TutorialDetail, Language, TutorialResource, DomainReviewerRole, \
     FossCategory
 from videoprocessing.models import VideoTutorial, VideoChunk
-from videoprocessing.permissions import is_tutorial_allotted, IsContributor, IsDomainReviewer
+from videoprocessing.permissions import is_tutorial_allotted, IsContributor, IsDomainReviewer, is_foss_allotted
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer, \
     ChangeAudioSerializer
 from videoprocessing.tasks import fetch_video_generate_checksum, new_audio_trim
@@ -81,7 +81,10 @@ class VideoTutorialProcess(mixins.ListModelMixin, generics.GenericAPIView):
                 file = TutorialResource.objects.get(tutorial_detail_id=tutorial_id, language_id=language_id)
                 video_file_extension = "." + file.video.split('.')[-1]
                 data = request.data
+                _mutable = data._mutable
+                data._mutable = True
                 data['foss'] = foss_id
+                data._mutable = _mutable
                 print(data)
                 serializer = VideoSerializer(data=data)
                 if serializer.is_valid():
@@ -237,10 +240,10 @@ class DomainReviewerTutorialsList(generics.ListAPIView):
             user = self.request.user
             domains = DomainReviewerRole.objects.filter(user=user, status=True)
             tuts = None
-
             for domain in domains:
                 print(domain)
-                x = VideoTutorial.objects.filter(foss_id=domain.foss_category_id, language_id=domain.language_id)
+                x = VideoTutorial.objects.filter(foss_id=domain.foss_category_id, language_id=domain.language_id,
+                                                 submission_status='submitted', status='done')
                 if x.count():
                     if tuts is None:
                         tuts = x
@@ -248,6 +251,70 @@ class DomainReviewerTutorialsList(generics.ListAPIView):
                         tuts = tuts | x
             return tuts
 
-
-        except ContributorRole.DoesNotExist:
+        except VideoTutorial.DoesNotExist:
             raise exceptions.NotFound('No Tutorials Found')
+
+
+class TutorialInfo(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsDomainReviewer]
+    serializer_class = VideoChunkSerializer
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        print(pk)
+        try:
+            uuid_obj = UUID(pk, version=4)
+            print(uuid_obj)
+            try:
+                chunk = VideoChunk.objects.filter(VideoTutorial=pk)
+                return chunk
+            except VideoChunk.DoesNotExist:
+                raise exceptions.NotFound('Invalid Video ID')
+        except ValueError:
+            raise exceptions.NotFound('Invalid Video ID')
+
+    def get(self, request, *args, **kwargs):
+        """Return all chunks for particular video"""
+        pk = self.kwargs['pk']
+        print(pk)
+        try:
+            video_obj = VideoTutorial.objects.get(pk=pk)
+            if is_foss_allotted(request.user, video_obj.foss, video_obj.language):
+                chunk = VideoChunk.objects.filter(VideoTutorial=pk)
+                context = {'request': request}
+
+                ser_video = VideoSerializer(video_obj, context=context)
+
+                meta_data = ser_video.data
+                meta_data['tutorial_name'] = str(TutorialDetail.objects.get(pk=video_obj.tutorial_detail.pk))
+                meta_data['language'] = str(Language.objects.get(pk=video_obj.language.pk))
+                meta_data['foss'] = video_obj.tutorial_detail.foss.foss
+
+                ser_chunk = VideoChunkSerializer(chunk, many=True, context=context)
+
+                return Response({
+                    'video_data': meta_data,
+                    'chunks': ser_chunk.data})
+        except (ValidationError, VideoTutorial.DoesNotExist):
+            return Response(
+                {"details": 'error'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+
+class SetVerdict(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsDomainReviewer]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            video_id = self.kwargs['pk']
+            video_obj = VideoTutorial.objects.get(pk=video_id)
+            if is_foss_allotted(request.user, video_obj.foss, video_obj.language):
+                if request.data['verdict'] == 'accepted' or request.data['verdict'] == 'rejected':
+                    video_obj.submission_status = request.data['verdict']
+                    video_obj.save()
+                    serializer = VideoSerializer(video_obj)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+        except IndexError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)

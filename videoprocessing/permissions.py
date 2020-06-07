@@ -12,11 +12,11 @@ def is_tutorial_allotted(user, tutorial_id, language_id):
     return False
 
 
-def is_foss_allotted(user, foss_id, language_id):
+def is_foss_allotted(user, foss, language):
     """
     Checks if a particular foss is allotted to the Domain Reviewer
     """
-    if DomainReviewerRole.objects.filter(user=user, fosss_category=foss_id, language_id=language_id).count():
+    if DomainReviewerRole.objects.filter(user=user, foss_category=foss, language=language).count():
         return True
     return False
 
