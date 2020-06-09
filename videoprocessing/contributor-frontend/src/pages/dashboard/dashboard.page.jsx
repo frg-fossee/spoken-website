@@ -4,7 +4,6 @@ import qs from 'qs'
 import {ReactMic} from 'react-mic';
 import {Player} from 'video-react';
 import "../../../node_modules/video-react/dist/video-react.css"; // import css
-
 import axios from 'axios'
 import {
     Breadcrumb,
@@ -17,9 +16,12 @@ import {
     Progress,
     Result,
     Row,
-    Skeleton, Space,
+    Skeleton,
+    Space,
+    Spin,
     Table,
-    Tabs, Timeline,
+    Tabs,
+    Timeline,
     Typography,
 } from 'antd';
 import ReactAudioPlayer from 'react-audio-player';
@@ -27,11 +29,12 @@ import ReactPlayer from "react-player";
 import {
     AudioOutlined,
     CaretRightOutlined,
-    DownloadOutlined,
     HomeOutlined,
     LoadingOutlined,
+    MessageOutlined,
     PauseOutlined,
     RollbackOutlined,
+    SendOutlined,
     VideoCameraOutlined
 } from '@ant-design/icons'
 import MediaNotFound from "../../components/errors/mediaNotFound";
@@ -80,11 +83,16 @@ class Dashboard extends React.Component {
             remove: () => {
                 // console.log('nothing to remove')
             },
-            record: false
+            record: false,
+            submission_status: '',
+            isCommentVisible: false,
+            isSubmitVisible: false,
+            comment_temp: '',
+            comment: ''
         }
         this.handleChange = (e) => {
             let value = e.target.value
-            this.setState({selected_chunk_sub: value, isUploadDisabled:false});
+            this.setState({selected_chunk_sub: value, isUploadDisabled: false});
 
         }
         this.revertShowModal = (chunk_no) => {
@@ -108,7 +116,7 @@ class Dashboard extends React.Component {
 
         this.handleChangeStatus = ({meta, file, remove}, status) => {
             if (status !== 'rejected_file_type') {
-                this.setState({audio_file: file, remove: remove,isUploadDisabled: false})
+                this.setState({audio_file: file, remove: remove, isUploadDisabled: false})
             } else {
                 this.openNotificationWithIcon('Unsupported File', 'You can only upload .mp3 files', 'warning')
             }
@@ -122,7 +130,7 @@ class Dashboard extends React.Component {
             const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
             // console.log(audio_file)
             const formData = new FormData();
-            if(audio_file){
+            if (audio_file) {
                 formData.append('audio_chunk', audio_file);
             }
             formData.append('subtitle', selected_chunk_sub)
@@ -282,6 +290,8 @@ class Dashboard extends React.Component {
                             foss: res.data.video_data.foss,
                             status: res.data.video_data.status,
                             checksum: res.data.video_data.checksum,
+                            submission_status: res.data.video_data.submission_status,
+                            comment: res.data.video_data.comment
                         });
                         if (res.data.video_data.processed_video === null) {
                             this.setState(
@@ -326,6 +336,12 @@ class Dashboard extends React.Component {
     togglePlayButton = () => {
         let status = this.state.playing
         status ? this.setState({playing: false}) : this.setState({playing: true})
+    }
+
+    closeCommentModal = () => {
+        this.setState({
+            isCommentVisible: false
+        })
     }
 
     pauseVideo = video => {
@@ -437,7 +453,13 @@ class Dashboard extends React.Component {
     onSave = async (blobObject) => {
         let file = await new File([blobObject.blob], "record.webm");
         this.setState({downloadURL: blobObject.blobURL})
-        this.setState({audio_file: file})
+        this.setState({audio_file: file, isUploadDisabled: false})
+    }
+
+    showComment = () => {
+        this.setState({
+            isCommentVisible: true
+        })
     }
 
 
@@ -461,8 +483,43 @@ class Dashboard extends React.Component {
     }
 
 
+    submitTutorial = () => {
+        const formData = new FormData();
+        formData.append('comment', this.state.comment_temp)
+        axios.post(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/submit`, formData)
+            .then(() => {
+                this.openNotificationWithIcon('Submitted', 'Tutorial Submitted Successfully', 'success')
+            })
+            .then(() => {
+                this.fetchData()
+                this.setState({status: 'in_queue'})
+                this.closeSubmitModal()
+            })
+            .catch(() => {
+                this.openNotificationWithIcon('Error', 'Some Error Occurred', 'error')
+            })
+    }
+
+    closeSubmitModal = () => {
+        this.setState({isSubmitVisible: false})
+    }
+
+    showSubmitModal = () => {
+        this.setState({isSubmitVisible: true})
+    }
+
+
     render() {
         const {uploading, audio_file} = this.state;
+        let status_text
+        if (this.state.submission_status === 'draft')
+            status_text = <Title level={4}>Draft</Title>
+        if (this.state.submission_status === 'submitted')
+            status_text = <Title level={4} type="warning">Submitted for Review</Title>
+        else if (this.state.submission_status === 'accepted')
+            status_text = <Title level={4} style={{color: '#52c41a'}}>Accepted</Title>
+        else if (this.state.submission_status === 'rejected')
+            status_text = <Title level={4} type="danger">Rejected</Title>
 
         let status = this.state.status
         if (status === 'loading') {
@@ -484,7 +541,7 @@ class Dashboard extends React.Component {
                         <Breadcrumb.Item href="/">
                             <HomeOutlined/>
                         </Breadcrumb.Item>
-                        <Breadcrumb.Item href="/videoprocessing">
+                        <Breadcrumb.Item href="#/">
                             <VideoCameraOutlined/>
                             <span>Video Processing</span>
                         </Breadcrumb.Item>
@@ -493,39 +550,38 @@ class Dashboard extends React.Component {
                         </Breadcrumb.Item>
                     </Breadcrumb>
                     <Row align="middle">
-                        <Col span={4}
+                        <Col xs={2} sm={4} md={4} lg={4} xl={4}
                              style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
                             <Progress type="circle"
                                       percent={parseInt((this.state.current_count / this.state.total_count) * 100)}
                                       status={this.state.progress_status}/>
                         </Col>
-                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                             span={4}>
+                        <Col xs={2} sm={4} md={4} lg={4} xl={4}
+                             style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
+                        >
                             <Typography>
-                                <Title level={4}>Status: {this.state.status.toUpperCase()}</Title>
+                                {
+                                    this.state.status === 'done' ? null : <Spin size="large"/>
+
+                                }
+                                {/*<Title level={4}>{this.state.submission_status.toUpperCase()}</Title>*/}
+                                {status_text}
                                 <Title>
                                     <Button
-                                        type="primary" icon={<DownloadOutlined/>}
-                                        download='video'
-                                        disabled={this.state.status !== 'done'}
-                                        href={this.state.processed_video}
-                                        style={{textDecoration: 'none', color: 'white'}}>Download
-                                        Tutorial</Button>
-
-                                    <Button
-                                        type="primary" icon={<DownloadOutlined/>}
-                                        download='subtitle.srt'
-                                        disabled={this.state.status !== 'done'}
-                                        href={this.state.subtitle}
-                                        style={{textDecoration: 'none', color: 'white'}}>Download
-                                        Subtitle</Button>
-
+                                        onClick={this.showSubmitModal}
+                                        disabled={this.state.submission_status === 'submitted'}
+                                        icon={<SendOutlined/>} type='primary'>Submit for Review</Button>
+                                    <Button onClick={this.showComment}
+                                            disabled={this.state.submission_status === 'submitted'}
+                                            icon={<MessageOutlined/>}>View Comment</Button>
                                 </Title>
+
+
                             </Typography>
                         </Col>
 
                         <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                             span={8}>
+                             xs={2} sm={8} md={8} lg={8} xl={8}>
                             <Typography>
                                 <Title level={3}>{this.state.tutorial_name}</Title>
                                 <Title level={4}>{this.state.foss}</Title>
@@ -533,7 +589,7 @@ class Dashboard extends React.Component {
                         </Col>
 
                         <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                             span={8}>
+                              xs={2} sm={8} md={8} lg={8} xl={8}>
 
                             {
                                 this.state.status === 'done' ?
@@ -726,6 +782,37 @@ class Dashboard extends React.Component {
                         chunk_no={this.state.revertChunkSelected}
                         revertChunk={this.revertChunk}
                     />
+
+                    <Modal
+                        title="Comment from Reviewer"
+                        visible={this.state.isCommentVisible}
+                        onOk={this.closeCommentModal}
+                        onCancel={this.closeCommentModal}
+                    >
+                        <Typography.Paragraph>
+                            {this.state.comment}
+                        </Typography.Paragraph>
+                    </Modal>
+                    <Modal
+                        width={'40vw'}
+                        title="Submit for Review"
+                        visible={this.state.isSubmitVisible}
+                        onOk={this.submitTutorial}
+                        onCancel={this.closeSubmitModal}
+                        okText='Submit'
+                    >
+                        <Typography.Text>Message to Reviewer</Typography.Text>
+                        <Input.TextArea allowClear
+                                        autoSize={{minRows: 3, maxRows: 4}}
+                                        rows={4}
+                                        onChange={(e) => {
+                                            this.setState({comment_temp: e.target.value})
+                                        }}
+                        />
+                        <br/>
+                        <br/>
+
+                    </Modal>
 
                 </div>
 

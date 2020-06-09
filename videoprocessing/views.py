@@ -224,7 +224,7 @@ class SubmitForReview(APIView):
             print(pk)
             video = VideoTutorial.objects.get(pk=pk, user=request.user)
             print(video.submission_status)
-            if video.submission_status == 'draft':
+            if video.submission_status != 'submitted':
                 video.submission_status = 'submitted'
                 try:
                     video.comment = request.data['comment']

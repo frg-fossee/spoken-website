@@ -29,6 +29,31 @@ const columns = [
         sorter: (a, b) => a.language.localeCompare(b.language),
         sortDirections: ['descend', 'ascend']
     }, {
+        title: 'Status',
+        dataIndex: 'submission_status',
+        key: 'submission_status',
+        filters: [
+            {text: 'Submitted for Review', value: 'submitted'},
+            {text: 'Draft', value: 'draft'},
+            {text: 'Not Initialized', value: 'not_initialized'},
+            {text: 'Accepted', value: 'accepted'},
+            {text: 'Rejected', value: 'rejected'},
+        ],
+        // filteredValue: filteredInfo.submission_status || null,
+        onFilter: (value, record) => record.submission_status.includes(value),
+        render: value => {
+            if (value === 'not_initialized')
+                return <Text type="secondary">Not Initialized</Text>
+            if (value === 'draft')
+                return <Text style={{color: '#1890ff'}} >Draft</Text>
+            if (value === 'submitted')
+                return <Text type="warning">Submitted for Review</Text>
+            if (value === 'accepted')
+                return <Text style={{color: 'green'}}>Accepted</Text>
+            if (value === 'rejected')
+                return <Text type="danger">Rejected</Text>
+        }
+    }, {
         title: 'Edit Video',
         dataIndex: 'button',
         key: 'button',
@@ -155,7 +180,9 @@ class TutorialsListPage extends React.Component {
             let booltut = item.tutorial.toLowerCase().includes(value.toLowerCase())
             let boolfoss = item.foss.toLowerCase().includes(value.toLowerCase())
             let boollang = item.language.toLowerCase().includes(value.toLowerCase())
-            return booltut || boollang || boolfoss
+            let boolstatus = item.submission_status.toLowerCase().includes(value.toLowerCase())
+
+            return booltut || boollang || boolfoss || boolstatus
         })
         this.setState({searchFilteredTable: filteredList, searchBox: value})
 
@@ -178,6 +205,7 @@ class TutorialsListPage extends React.Component {
                     tut_obj.isEdited = false
                     tut_obj.tutorial_id = tutorial.tutorial_detail.id
                     tut_obj.language_id = tutorial.language.id
+                    tut_obj.submission_status = 'not_initialized'
                     tut_obj.button = <Popconfirm onConfirm={
                         () => this.handleSubmit(
                             tutorial.tutorial_detail.id,
@@ -205,6 +233,7 @@ class TutorialsListPage extends React.Component {
                                 filtered_tuts[i].button =
                                     <Button size={'large'} icon={<EyeOutlined/>} href={`#/dashboard?id=${tut.id}`}>Edit
                                         Video</Button>
+                                filtered_tuts[i].submission_status = tut.submission_status
                             }
                         }
                     })

@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import {Route, Switch} from 'react-router-dom';
 import TutorialsListComponent from "./components/tutorialsList/tutorialsList.component";
-import DashboardComponent from "./components/dashboard.component";
+import DashboardComponent from "./components/dashboard/dashboard.component";
 import axios from 'axios'
 import {Cookies, withCookies} from 'react-cookie';
 import {instanceOf} from 'prop-types';
