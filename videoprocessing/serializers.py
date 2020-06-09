@@ -43,9 +43,9 @@ class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoTutorial
         fields = ['id', 'checksum', 'status', 'submission_status', 'tutorial_detail', 'foss', 'language',
-                  'video', 'subtitle', 'total_chunks', 'processed_video']
+                  'video', 'subtitle', 'total_chunks', 'processed_video', 'comment']
         read_only_fields = ['id', 'checksum', 'status', 'submission_status', 'foss',
-                            'video', 'subtitle', 'total_chunks', 'processed_video']
+                            'video', 'subtitle', 'total_chunks', 'processed_video', 'comment']
 
 
 class VideoChunkSerializer(serializers.ModelSerializer):
@@ -122,3 +122,17 @@ class VerdictSerializer(serializers.ModelSerializer):
         model = VideoTutorial
         fields = ['id', 'submission_status']
         read_only_fields = ['id', ]
+
+
+class ReviewerTutorialSerializer(serializers.ModelSerializer):
+    foss = FossCategorySerializer(read_only=True)
+    language = LanguageSerializer(read_only=True)
+    tutorial_detail = TutorialDetailSerializer(read_only=True)
+    key = serializers.UUIDField(source='id')
+
+    class Meta:
+        model = VideoTutorial
+        fields = ['key', 'checksum', 'status', 'submission_status', 'tutorial_detail', 'foss', 'language',
+                  'video', 'subtitle', 'total_chunks', 'processed_video', 'comment']
+        read_only_fields = ['key', 'checksum', 'status', 'submission_status', 'foss',
+                            'video', 'subtitle', 'total_chunks', 'processed_video', 'comment']

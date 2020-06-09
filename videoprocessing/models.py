@@ -123,7 +123,7 @@ class VideoTutorial(models.Model):
                           default=uuid.uuid4,
                           editable=False)
     checksum = models.CharField(max_length=32)
-    foss = models.ForeignKey(FossCategory)
+    foss = models.ForeignKey(FossCategory, null=True)
     tutorial_detail = models.ForeignKey(TutorialDetail)
     language = models.ForeignKey(Language)
     status = models.CharField(default='in_queue', max_length=32)
@@ -141,7 +141,7 @@ class VideoTutorial(models.Model):
         ('rejected', 'Rejected')
     ]
     submission_status = models.CharField(max_length=9, choices=SUBMISSION_STATUS_CHOICES, default='draft')
-    comment = models.TextField()
+    comment = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return str(self.tutorial_detail)

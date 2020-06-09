@@ -1,6 +1,8 @@
+import traceback
 from uuid import UUID
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import render, redirect
@@ -13,9 +15,9 @@ from rest_framework.views import APIView
 from creation.models import ContributorRole, TutorialDetail, Language, TutorialResource, DomainReviewerRole, \
     FossCategory
 from videoprocessing.models import VideoTutorial, VideoChunk
-from videoprocessing.permissions import is_tutorial_allotted, IsContributor, IsDomainReviewer, is_foss_allotted
+from videoprocessing.permissions import is_tutorial_allotted, IsContributor, is_foss_allotted, IsDomainReviewer
 from videoprocessing.serializers import ContributorTutorialsSerializer, VideoSerializer, VideoChunkSerializer, \
-    ChangeAudioSerializer
+    ChangeAudioSerializer, ReviewerTutorialSerializer
 from videoprocessing.tasks import fetch_video_generate_checksum, new_audio_trim
 
 
@@ -24,7 +26,9 @@ def index(request):
     The View which will load the frontend of App
     """
     if request.user.is_authenticated and ContributorRole.objects.filter(user=request.user).count():
-        return render(request, 'videoprocessing/index.html')
+        return render(request, 'videoprocessing/client_index.html')
+    elif request.user.is_authenticated and DomainReviewerRole.objects.filter(user=request.user).count():
+        return render(request, 'videoprocessing/reviewer_index.html')
     return redirect('%s?next=%s' % ('/accounts/login/', request.path))
 
 
@@ -224,31 +228,34 @@ class SubmitForReview(APIView):
                 video.submission_status = 'submitted'
                 try:
                     video.comment = request.data['comment']
-                except IndexError:
+                except KeyError:
                     pass
                 serializer = VideoSerializer(video)
                 video.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response({'details': 'request already submitted'}, status=status.HTTP_409_CONFLICT)
         except:
+            traceback.print_exc()
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 # Domain Reviewer APIs
+
+
 class DomainReviewerTutorialsList(generics.ListAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsDomainReviewer]
-    serializer_class = VideoSerializer
+    serializer_class = ReviewerTutorialSerializer
 
     def get_queryset(self):
         try:
-            user = self.request.user
-            domains = DomainReviewerRole.objects.filter(user=user, status=True)
+            # user = self.request.user
+            domains = DomainReviewerRole.objects.filter(user=self.request.user, status=True)
             tuts = None
             for domain in domains:
                 print(domain)
                 x = VideoTutorial.objects.filter(foss_id=domain.foss_category_id, language_id=domain.language_id,
-                                                 submission_status='submitted', status='done')
+                                                 status='done').exclude(submission_status='draft')
                 if x.count():
                     if tuts is None:
                         tuts = x
@@ -258,6 +265,11 @@ class DomainReviewerTutorialsList(generics.ListAPIView):
 
         except VideoTutorial.DoesNotExist:
             raise exceptions.NotFound('No Tutorials Found')
+
+    # def get(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     serializer = VideoSerializer(queryset, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DomainReviewerTutorialInfo(APIView):
@@ -307,6 +319,23 @@ class DomainReviewerTutorialInfo(APIView):
                 status=status.HTTP_400_BAD_REQUEST)
 
 
+class SingleChunk(generics.RetrieveAPIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated, IsDomainReviewer]
+    serializer_class = ChangeAudioSerializer
+    queryset = VideoChunk.objects.all()
+
+    def get_object(self):
+        """it will return chunk with provided arguments"""
+        try:
+            return VideoChunk.objects.get(VideoTutorial=self.kwargs['pk'],
+                                          chunk_no=self.kwargs['chunk_no'])
+        except VideoChunk.DoesNotExist:
+            raise Http404
+        except ValidationError:
+            raise exceptions.ValidationError('Invalid UUID Or Chunk No')
+
+
 class SetVerdict(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated, IsDomainReviewer]
@@ -321,6 +350,8 @@ class SetVerdict(APIView):
                     try:
                         video_obj.comment = request.data['comment']
                     except IndexError:
+                        pass
+                    except KeyError:
                         pass
                     video_obj.save()
                     serializer = VideoSerializer(video_obj)

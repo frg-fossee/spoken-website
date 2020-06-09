@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'api/process_tutorials/(?P<pk>[0-9a-f-]+)', views.GetVideoChunk.as_view()),
     url(r'api/process_tutorials',
         views.VideoTutorialProcess.as_view()),
+    url(r'api/review/(?P<pk>[0-9a-f-]+)/(?P<chunk_no>\d+)', views.SingleChunk.as_view()),
     url(r'api/review/(?P<pk>[0-9a-f-]+)/verdict', views.SetVerdict.as_view()),
     url(r'api/review/(?P<pk>[0-9a-f-]+)', views.DomainReviewerTutorialInfo.as_view()),
     url(r'api/review', views.DomainReviewerTutorialsList.as_view()),
