@@ -1,8 +1,8 @@
 import React from "react";
-import {withRouter} from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import qs from 'qs'
-import {ReactMic} from 'react-mic';
-import {Player} from 'video-react';
+import { ReactMic } from 'react-mic';
+import { Player } from 'video-react';
 import "../../../node_modules/video-react/dist/video-react.css"; // import css
 import axios from 'axios'
 import {
@@ -44,8 +44,8 @@ import RevertModal from "../../components/revertModal/revertModal.component";
 import 'react-dropzone-uploader/dist/styles.css'
 import Dropzone from 'react-dropzone-uploader'
 
-const {Title, Text} = Typography;
-const {TabPane} = Tabs
+const { Title, Text } = Typography;
+const { TabPane } = Tabs
 
 
 class Dashboard extends React.Component {
@@ -92,19 +92,19 @@ class Dashboard extends React.Component {
         }
         this.handleChange = (e) => {
             let value = e.target.value
-            this.setState({selected_chunk_sub: value, isUploadDisabled: false});
+            this.setState({ selected_chunk_sub: value, isUploadDisabled: false });
 
         }
         this.revertShowModal = (chunk_no) => {
-            this.setState({revertModalVisible: true, revisionData: [], revertChunkSelected: chunk_no})
+            this.setState({ revertModalVisible: true, revisionData: [], revertChunkSelected: chunk_no })
             axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}`)
                 .then((res) => {
                     // console.log(res.data.history)
-                    this.setState({revisionData: res.data.history})
+                    this.setState({ revisionData: res.data.history })
 
                 })
                 .then(() => {
-                    this.setState({revisionsTableLoading: false})
+                    this.setState({ revisionsTableLoading: false })
                 })
         }
         this.openNotificationWithIcon = (title, message, type) => {
@@ -114,9 +114,9 @@ class Dashboard extends React.Component {
             });
         };
 
-        this.handleChangeStatus = ({meta, file, remove}, status) => {
+        this.handleChangeStatus = ({ meta, file, remove }, status) => {
             if (status !== 'rejected_file_type') {
-                this.setState({audio_file: file, remove: remove, isUploadDisabled: false})
+                this.setState({ audio_file: file, remove: remove, isUploadDisabled: false })
             } else {
                 this.openNotificationWithIcon('Unsupported File', 'You can only upload .mp3 files', 'warning')
             }
@@ -127,7 +127,7 @@ class Dashboard extends React.Component {
                 progress_status: 'normal',
                 status: 'Uploading'
             });
-            const {audio_file, selected_chunk, selected_chunk_sub} = this.state;
+            const { audio_file, selected_chunk, selected_chunk_sub } = this.state;
             // console.log(audio_file)
             const formData = new FormData();
             if (audio_file) {
@@ -137,12 +137,12 @@ class Dashboard extends React.Component {
             axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${selected_chunk}`, formData)
                 .then(() => {
                     this.fetchData();
-                    this.setState({uploading: false});
+                    this.setState({ uploading: false });
                 })
                 .then(() => this.handleCancel())
                 .catch((error) => {
                     // console.log(error.response)
-                    this.setState({uploading: false, status: 'done'});
+                    this.setState({ uploading: false, status: 'done' });
                     this.handleCancel()
                     this.openNotificationWithIcon('Duplicate File', 'You have already uploaded this audio, Simply revert back', 'warning')
 
@@ -199,8 +199,8 @@ class Dashboard extends React.Component {
                 title: 'Change Audio/Subtitle',
                 width: '10%',
                 render: (value) => {
-                    return (<Button icon={<AudioOutlined/>} onClick={() => this.changeAudioShowModal(value.chunk_no)}
-                                    disabled={this.state.status !== 'done'}>Change
+                    return (<Button icon={<AudioOutlined />} onClick={() => this.changeAudioShowModal(value.chunk_no)}
+                        disabled={this.state.status !== 'done'|| this.state.submission_status === 'submitted' || this.state.submission_status === 'accepted'}>Change
                             Audio / Subtitle</Button>
                     )
                 }
@@ -210,9 +210,9 @@ class Dashboard extends React.Component {
                 width: '10%',
                 render: (value) => {
                     // console.log(value.revisions)
-                    return (<Button icon={<RollbackOutlined/>}
-                                    onClick={() => this.revertShowModal(value.chunk_no)}
-                                    disabled={value.revisions <= 1 || this.state.status !== 'done'}>Revert </Button>
+                    return (<Button icon={<RollbackOutlined />}
+                        onClick={() => this.revertShowModal(value.chunk_no)}
+                        disabled={value.revisions <= 1 || this.state.status !== 'done' || this.state.submission_status === 'submitted' || this.state.submission_status === 'accepted'}>Revert </Button>
                     )
                 }
             },
@@ -247,7 +247,7 @@ class Dashboard extends React.Component {
         };
 
         this.revertHandleCancel = () => {
-            this.setState({revertModalVisible: false})
+            this.setState({ revertModalVisible: false })
         }
 
         this.revertChunk = (history_id, chunk_no) => {
@@ -259,7 +259,7 @@ class Dashboard extends React.Component {
             axios.put(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}/${chunk_no}/revert/${history_id}`)
                 .then(() => {
                     this.fetchData();
-                    this.setState({uploading: false});
+                    this.setState({ uploading: false });
                 })
                 .then(() => this.revertHandleCancel())
 
@@ -268,7 +268,7 @@ class Dashboard extends React.Component {
         this.handleCancel = e => {
 
             // console.log(e);
-            this.setState({playing: false})
+            this.setState({ playing: false })
             this.setState({
                 audio_file: '',
                 visible: false,
@@ -276,7 +276,7 @@ class Dashboard extends React.Component {
         };
 
         this.fetchData = () => {
-            this.setState({processed: false})
+            this.setState({ processed: false })
             this.apiLoop = setInterval(() => {
                 axios.get(`${process.env.REACT_APP_API_URL}/process_tutorials/${this.state.id}`)
                     .then((res) => {
@@ -307,7 +307,7 @@ class Dashboard extends React.Component {
                         }
                         if (res.data.video_data.status === 'done' || res.data.video_data.status === 'error' || res.data.video_data.status === 'media_not_found') {
                             clearInterval(this.apiLoop);
-                            this.setState({processed: true})
+                            this.setState({ processed: true })
                         }
                     })
                     .catch((error) => {
@@ -318,7 +318,7 @@ class Dashboard extends React.Component {
                                 // console.log('Notification Clicked!');
                             },
                         });
-                        this.setState({status: 'not found', progress_status: 'exception'})
+                        this.setState({ status: 'not found', progress_status: 'exception' })
 
                         clearInterval(this.apiLoop)
                     })
@@ -335,7 +335,7 @@ class Dashboard extends React.Component {
 
     togglePlayButton = () => {
         let status = this.state.playing
-        status ? this.setState({playing: false}) : this.setState({playing: true})
+        status ? this.setState({ playing: false }) : this.setState({ playing: true })
     }
 
     closeCommentModal = () => {
@@ -361,7 +361,7 @@ class Dashboard extends React.Component {
         // now change the current running chunk here
         if (chunk - 1 < 0) {
             //no prevous
-            let {playedSeconds} = video;
+            let { playedSeconds } = video;
 
             let current = this.state.chunks[chunk]['end_time'];
             a = current.split(':')
@@ -373,15 +373,15 @@ class Dashboard extends React.Component {
 
 
             if (playedSeconds > 0 && playedSeconds < currentSeconds) {
-                this.setState({currentRunningChunk: chunk})
+                this.setState({ currentRunningChunk: chunk })
             }
             if (playedSeconds > currentSeconds && playedSeconds < nextSeconds) {
                 // console.log('hello')
-                this.setState({currentRunningChunk: chunk + 1})
+                this.setState({ currentRunningChunk: chunk + 1 })
             }
         } else if (chunk + 1 >= total_chunks) {
             //no next
-            let {playedSeconds} = video;
+            let { playedSeconds } = video;
 
             let prev = this.state.chunks[chunk - 1]['end_time'];
             let a = prev.split(':')
@@ -393,16 +393,16 @@ class Dashboard extends React.Component {
 
 
             if (playedSeconds > 0 && playedSeconds < prevSeconds) {
-                this.setState({currentRunningChunk: chunk - 1})
+                this.setState({ currentRunningChunk: chunk - 1 })
             }
 
             if (playedSeconds > prevSeconds && playedSeconds < currentSeconds) {
-                this.setState({currentRunningChunk: chunk})
+                this.setState({ currentRunningChunk: chunk })
             }
 
         } else {
             //both
-            let {playedSeconds} = video;
+            let { playedSeconds } = video;
             // console.log('ksdflkdjflkdsjflkdsjflkdjfldkfj')
 
             let prev = this.state.chunks[chunk - 1]['end_time'];
@@ -417,15 +417,15 @@ class Dashboard extends React.Component {
             a = next.split(':')
             let nextSeconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
             if (playedSeconds > 0 && playedSeconds < prevSeconds) {
-                this.setState({currentRunningChunk: chunk - 1})
+                this.setState({ currentRunningChunk: chunk - 1 })
             }
 
             if (playedSeconds > prevSeconds && playedSeconds < currentSeconds) {
-                this.setState({currentRunningChunk: chunk})
+                this.setState({ currentRunningChunk: chunk })
             }
             if (playedSeconds > currentSeconds && playedSeconds < nextSeconds) {
                 // console.log('hello')
-                this.setState({currentRunningChunk: chunk + 1})
+                this.setState({ currentRunningChunk: chunk + 1 })
             }
 
 
@@ -433,17 +433,17 @@ class Dashboard extends React.Component {
 
 
         if (Math.floor(video.playedSeconds) === end_seconds) {
-            this.setState({playing: false})
+            this.setState({ playing: false })
             this.player.seekTo(start_seconds, 'seconds')
         }
     }
 
     startRecording = () => {
-        this.setState({record: true});
+        this.setState({ record: true });
     }
 
     stopRecording = () => {
-        this.setState({record: false});
+        this.setState({ record: false });
     }
 
     onData(recordedBlob) {
@@ -452,8 +452,8 @@ class Dashboard extends React.Component {
 
     onSave = async (blobObject) => {
         let file = await new File([blobObject.blob], "record.webm");
-        this.setState({downloadURL: blobObject.blobURL})
-        this.setState({audio_file: file, isUploadDisabled: false})
+        this.setState({ downloadURL: blobObject.blobURL })
+        this.setState({ audio_file: file, isUploadDisabled: false })
     }
 
     showComment = () => {
@@ -469,8 +469,8 @@ class Dashboard extends React.Component {
 
 
     componentWillMount() {
-        let id = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).id
-        this.setState({id: id})
+        let id = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).id
+        this.setState({ id: id })
 
     }
 
@@ -491,8 +491,7 @@ class Dashboard extends React.Component {
                 this.openNotificationWithIcon('Submitted', 'Tutorial Submitted Successfully', 'success')
             })
             .then(() => {
-                this.fetchData()
-                this.setState({status: 'in_queue'})
+                this.setState({ submission_status: 'submitted' })
                 this.closeSubmitModal()
             })
             .catch(() => {
@@ -501,23 +500,23 @@ class Dashboard extends React.Component {
     }
 
     closeSubmitModal = () => {
-        this.setState({isSubmitVisible: false})
+        this.setState({ isSubmitVisible: false })
     }
 
     showSubmitModal = () => {
-        this.setState({isSubmitVisible: true})
+        this.setState({ isSubmitVisible: true })
     }
 
 
     render() {
-        const {uploading, audio_file} = this.state;
+        const { uploading, audio_file } = this.state;
         let status_text
         if (this.state.submission_status === 'draft')
             status_text = <Title level={4}>Draft</Title>
         if (this.state.submission_status === 'submitted')
             status_text = <Title level={4} type="warning">Submitted for Review</Title>
         else if (this.state.submission_status === 'accepted')
-            status_text = <Title level={4} style={{color: '#52c41a'}}>Accepted</Title>
+            status_text = <Title level={4} style={{ color: '#52c41a' }}>Accepted</Title>
         else if (this.state.submission_status === 'rejected')
             status_text = <Title level={4} type="danger">Rejected</Title>
 
@@ -525,24 +524,24 @@ class Dashboard extends React.Component {
         if (status === 'loading') {
             return (
                 <Result
-                    icon={<LoadingOutlined/>}
+                    icon={<LoadingOutlined />}
                     title="Fetching Files"
                 />
 
             )
         } else if (status === 'not found') {
-            return (<Error403Component/>)
+            return (<Error403Component />)
         } else if (status === 'media_not_found') {
-            return (<MediaNotFound/>)
+            return (<MediaNotFound />)
         } else {
             return (
                 <div>
                     <Breadcrumb>
                         <Breadcrumb.Item href="/">
-                            <HomeOutlined/>
+                            <HomeOutlined />
                         </Breadcrumb.Item>
                         <Breadcrumb.Item href="#/">
-                            <VideoCameraOutlined/>
+                            <VideoCameraOutlined />
                             <span>Video Processing</span>
                         </Breadcrumb.Item>
                         <Breadcrumb.Item>
@@ -551,17 +550,17 @@ class Dashboard extends React.Component {
                     </Breadcrumb>
                     <Row align="middle">
                         <Col xs={2} sm={4} md={4} lg={4} xl={4}
-                             style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
+                            style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Progress type="circle"
-                                      percent={parseInt((this.state.current_count / this.state.total_count) * 100)}
-                                      status={this.state.progress_status}/>
+                                percent={parseInt((this.state.current_count / this.state.total_count) * 100)}
+                                status={this.state.progress_status} />
                         </Col>
                         <Col xs={2} sm={4} md={4} lg={4} xl={4}
-                             style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
+                            style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}
                         >
                             <Typography>
                                 {
-                                    this.state.status === 'done' ? null : <Spin size="large"/>
+                                    this.state.status === 'done' ? null : <Spin size="large" />
 
                                 }
                                 {/*<Title level={4}>{this.state.submission_status.toUpperCase()}</Title>*/}
@@ -569,27 +568,27 @@ class Dashboard extends React.Component {
                                 <Title>
                                     <Button
                                         onClick={this.showSubmitModal}
-                                        disabled={this.state.submission_status === 'submitted'}
-                                        icon={<SendOutlined/>} type='primary'>Submit for Review</Button>
+                                        disabled={this.state.submission_status === 'submitted' || this.state.submission_status === 'accepted' }
+                                        icon={<SendOutlined />} type='primary'>Submit for Review</Button>
                                     <Button onClick={this.showComment}
-                                            disabled={this.state.submission_status === 'submitted'}
-                                            icon={<MessageOutlined/>}>View Comment</Button>
+                                        disabled={this.state.submission_status === 'submitted' || this.state.submission_status === 'accepted'}
+                                        icon={<MessageOutlined />}>View Comment</Button>
                                 </Title>
 
 
                             </Typography>
                         </Col>
 
-                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                             xs={2} sm={8} md={8} lg={8} xl={8}>
+                        <Col style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}
+                            xs={2} sm={8} md={8} lg={8} xl={8}>
                             <Typography>
                                 <Title level={3}>{this.state.tutorial_name}</Title>
                                 <Title level={4}>{this.state.foss}</Title>
                             </Typography>
                         </Col>
 
-                        <Col style={{display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}
-                              xs={2} sm={8} md={8} lg={8} xl={8}>
+                        <Col style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}
+                            xs={2} sm={8} md={8} lg={8} xl={8}>
 
                             {
                                 this.state.status === 'done' ?
@@ -613,7 +612,7 @@ class Dashboard extends React.Component {
                                     //     }]}
                                     // />
                                     :
-                                    <Skeleton.Input style={{height: '200px'}} active/>
+                                    <Skeleton.Input style={{ height: '200px' }} active />
                             }
 
 
@@ -624,7 +623,7 @@ class Dashboard extends React.Component {
                         <Table
                             className='data-table'
                             dataSource={this.state.chunks}
-                            columns={this.columns}/>
+                            columns={this.columns} />
                     </Row>
 
                     <Modal
@@ -636,7 +635,7 @@ class Dashboard extends React.Component {
                             onClick: this.handleUpload,
                             disabled: this.state.isUploadDisabled,
                             loading: uploading,
-                            style: {marginTop: 16}
+                            style: { marginTop: 16 }
                         }
                         }
                         okText={uploading ? 'Uploading' : 'Start Upload'}
@@ -683,16 +682,16 @@ class Dashboard extends React.Component {
                                     onProgress={this.pauseVideo}
                                     ref={this.ref}
                                     width='100%'
-                                    url={this.state.processed_video}/>
+                                    url={this.state.processed_video} />
 
-                                <br/>
-                                <div style={{textAlign: 'center'}}>
+                                <br />
+                                <div style={{ textAlign: 'center' }}>
 
                                     <Button
                                         size='large'
                                         type="primary"
                                         shape="round"
-                                        icon={this.state.playing ? <PauseOutlined/> : <CaretRightOutlined/>}
+                                        icon={this.state.playing ? <PauseOutlined /> : <CaretRightOutlined />}
                                         onClick={this.togglePlayButton}
                                     >{this.state.playing ? 'Pause' : 'Play'}</Button>
                                 </div>
@@ -727,22 +726,22 @@ class Dashboard extends React.Component {
                                             />
                                             <Space>
                                                 <Button type="primary" shape="round"
-                                                        onClick={this.startRecording}
-                                                        disabled={this.state.record === true}
+                                                    onClick={this.startRecording}
+                                                    disabled={this.state.record === true}
                                                 > Start </Button>
                                                 <Button type="primary" shape="round"
-                                                        onClick={this.stopRecording}
-                                                        disabled={this.state.record === false}
+                                                    onClick={this.stopRecording}
+                                                    disabled={this.state.record === false}
 
                                                 > Stop </Button>
                                                 <Button type="primary" shape="round"
-                                                        disabled={this.state.downloadURL === ''}
-                                                        href={this.state.downloadURL}
-                                                        download="recording.webm">Download</Button>
+                                                    disabled={this.state.downloadURL === ''}
+                                                    href={this.state.downloadURL}
+                                                    download="recording.webm">Download</Button>
                                             </Space>
                                             {this.state.downloadURL ?
                                                 <div>
-                                                    <Divider/>
+                                                    <Divider />
 
                                                     <ReactAudioPlayer
                                                         src={this.state.downloadURL}
@@ -755,14 +754,14 @@ class Dashboard extends React.Component {
                                     </TabPane>
                                 </Tabs>
 
-                                <Divider/>
+                                <Divider />
                                 <Text>Subititle</Text>
                                 {
                                     status === 'done' ?
                                         <Input.TextArea allowClear
-                                                        autoSize
-                                                        value={this.state.selected_chunk_sub}
-                                                        onChange={this.handleChange}
+                                            autoSize
+                                            value={this.state.selected_chunk_sub}
+                                            onChange={this.handleChange}
                                         />
                                         :
                                         null
@@ -803,14 +802,14 @@ class Dashboard extends React.Component {
                     >
                         <Typography.Text>Message to Reviewer</Typography.Text>
                         <Input.TextArea allowClear
-                                        autoSize={{minRows: 3, maxRows: 4}}
-                                        rows={4}
-                                        onChange={(e) => {
-                                            this.setState({comment_temp: e.target.value})
-                                        }}
+                            autoSize={{ minRows: 3, maxRows: 4 }}
+                            rows={4}
+                            onChange={(e) => {
+                                this.setState({ comment_temp: e.target.value })
+                            }}
                         />
-                        <br/>
-                        <br/>
+                        <br />
+                        <br />
 
                     </Modal>
 

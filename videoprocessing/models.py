@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from rest_framework.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
-
+from django.utils import timezone
 from creation.models import TutorialDetail, Language, FossCategory
 
 
@@ -123,6 +123,8 @@ class VideoTutorial(models.Model):
                           default=uuid.uuid4,
                           editable=False)
     checksum = models.CharField(max_length=32)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     foss = models.ForeignKey(FossCategory, null=True)
     tutorial_detail = models.ForeignKey(TutorialDetail)
     language = models.ForeignKey(Language)
