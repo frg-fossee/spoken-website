@@ -131,11 +131,11 @@ urlpatterns = [
 
                   # events2
                   # url(r'^events2/', include('events2.urls', namespace='events2')),
+                  url(r'^cron/', include('cron.urls', namespace='cron')),
 
                   # cms
                   url(r'^', include('cms.urls', namespace='cms')),
-
-                  url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing')),
-
+                  #Video Processing
+                  url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing'))
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
