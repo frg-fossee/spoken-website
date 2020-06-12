@@ -3388,4 +3388,3 @@ class StudentGradeFilter(UserPassesTestMixin, FormView):
         return None
     return None
 
-
