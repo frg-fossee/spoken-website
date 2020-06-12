@@ -23,11 +23,5 @@ pip install -r requirements-py2.txt
 
 Create config.py in `spoken/` folder.
 
-Start the Server:
-```
-docker run -p 5672:5672 rabbitmq:alpine
-python manage.py runserver
-celery -A spoken worker
-```
 
 
