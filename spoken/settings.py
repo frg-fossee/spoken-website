@@ -343,7 +343,12 @@ CACHES = {
 
 # RabbitMQ will act as message broker for celery
 # AMQP Messaging protocol is used
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "amqp://127.0.0.1:5672")
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+
 VIDEO_PROCESSING_ROOT = 'videoprocessing'
 VIDEO_PROCESSING_VIDEO_FILE_NAME = 'video'
 VIDEO_PROCESSING_SUBTITLE_FILE_NAME = 'subtitle'
