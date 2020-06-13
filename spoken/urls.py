@@ -1,3 +1,4 @@
+
 # Third Party Stuff
 from . import settings
 
@@ -9,6 +10,7 @@ from workshop.views import *
 from cdeep.views import *
 from django.conf import settings
 from django.conf.urls.static import static
+
 
 app_name = 'spoken'
 admin.autodiscover()
@@ -124,12 +126,11 @@ urlpatterns = [
     # url(r'^events2/', include('events2.urls', namespace='events2')),
     url(r'^cron/', include('cron.urls', namespace='cron')),
 
-    url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing')),
+    #video-processing
+     url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing')),
 
     # cms
     url(r'^', include('cms.urls', namespace='cms')),
-
-
+    
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
