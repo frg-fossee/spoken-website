@@ -9,10 +9,9 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-import os
 from os.path import *
-
 from .config import *
+import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -101,12 +100,13 @@ INSTALLED_APPS = [
     'simple_history'
 ]
 
+
 ROOT_URLCONF = 'spoken.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'static')],  # templates
+        'DIRS': [os.path.join(BASE_DIR, 'static')], # templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -117,7 +117,7 @@ TEMPLATES = [
             ],
         },
     },
-]
+]   
 
 WSGI_APPLICATION = 'spoken.wsgi.application'
 
@@ -133,17 +133,18 @@ DATABASES = {
         'NAME': DB,
         'USER': DB_USER,
         'PASSWORD': DB_PASS,
-        'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',
+        'HOST': '',                            # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '',    
+    
     },
-    'moodle': {
-        'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': MDB,  # Or path to database file if using sqlite3.
+        'moodle': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': MDB,                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': MDB_USER,
         'PASSWORD': MDB_PASS,
-        'HOST': MDB_HOST,  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',  # Set to empty string for default.
+        'HOST': MDB_HOST,                  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '',                  # Set to empty string for default.
     },
     # 'cdeep': {
     #     'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -164,18 +165,16 @@ DATABASES = {
     #     'PORT': '',                  # Set to empty string for default.
     # },
     'forums': {
-        'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': FDB,  # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': FDB,                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': FDB_USER,
         'PASSWORD': FDB_PASS,
-        'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',  # Set to empty string for default.
-        'TEST': {
-            'MIRROR': 'default',
-        },
+        'HOST': '',                  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '',                  # Set to empty string for default.
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -195,6 +194,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -208,6 +208,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
@@ -215,12 +216,12 @@ STATIC_URL = '/static/'
 
 CONN_MAX_AGE = 100
 
-# events settings
+#events settings
 ONLINE_TEST_URL = ONLINE_TEST_URL
 KEEP_LOGGED_DURATION = 604800
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')  # Absolute path to the media.
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/') # Absolute path to the media.
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
@@ -248,22 +249,22 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    # BASE_DIR + '/static/',
+    #BASE_DIR + '/static/',
 )
 
-# debugging
-# INSTALLED_APPS = INSTALLED_APPS + ('debug_toolbar',)
+#debugging
+#INSTALLED_APPS = INSTALLED_APPS + ('debug_toolbar',)
 INTERNAL_IPS = ('127.0.0.1',)
 
-# Moodle Auth
-# AUTH_USER_MODEL = 'mdldjango.Users'
+#Moodle Auth
+#AUTH_USER_MODEL = 'mdldjango.Users'
 DATABASE_ROUTERS = [
     'mdldjango.router.MdlRouter',
     'cdeep.router.CdeepRouter',
     'workshop.router.WorkshopRouter',
     'forums.router.ForumsRouter'
 ]
-# AUTHENTICATION_BACKENDS = ( 'mdldjango.backend.MdlBackend', )
+#AUTHENTICATION_BACKENDS = ( 'mdldjango.backend.MdlBackend', )
 
 # Login using username or email address
 AUTHENTICATION_BACKENDS = (
@@ -307,7 +308,7 @@ HTML_MINIFY = HTML_MINIFY
 RECAPTCHA_PUBLIC_KEY = '6Le8qf8SAAAAABV9wYBW99Jotv-EygJXIhMa_n54'
 RECAPTCHA_PRIVATE_KEY = '6Le8qf8SAAAAAF9CkucURPapw2vaDPrU4qMzfg73'
 
-# RECAPTCHA V2
+#RECAPTCHA V2
 GOOGLE_RECAPTCHA_SITE_KEY = GOOGLE_RECAPTCHA_SITE_KEY
 GOOGLE_RECAPTCHA_SECRET_KEY = GOOGLE_RECAPTCHA_SECRET_KEY
 GOOGLE_RECAPTCHA_SITEVERIFY = GOOGLE_RECAPTCHA_SITEVERIFY
@@ -315,6 +316,7 @@ CHANNEL_KEY = CHANNEL_KEY
 RECAPTCHA_USE_SSL = True
 ACADEMIC_DURATION = 5
 SPOKEN_HASH_SALT = 'change this value'
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -326,7 +328,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.common.BrokenLinkEmailsMiddleware',
-    # 'masquerade.middleware.MasqueradeMiddleware',
+    #'masquerade.middleware.MasqueradeMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'impersonate.middleware.ImpersonateMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware'
@@ -344,8 +346,6 @@ CACHES = {
 
 
 
-# RabbitMQ will act as message broker for celery
-# AMQP Messaging protocol is used
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -362,7 +362,7 @@ CKEDITOR_CONFIGS = {
     }
 }
 
-DATA_UPLOAD_MAX_NUMBER_FIELDS = DATA_UPLOAD_MAX_NUMBER_FIELDS
+# DATA_UPLOAD_MAX_NUMBER_FIELDS = DATA_UPLOAD_MAX_NUMBER_FIELDS
 
 
 REST_FRAMEWORK = {
