@@ -96,6 +96,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'ckeditor',
     'cron',
+    'videoprocessing',
+    'simple_history'
 ]
 
 
@@ -328,7 +330,8 @@ MIDDLEWARE = [
     'django.middleware.common.BrokenLinkEmailsMiddleware',
     #'masquerade.middleware.MasqueradeMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
-    'impersonate.middleware.ImpersonateMiddleware'
+    'impersonate.middleware.ImpersonateMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware'
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -368,3 +371,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+VIDEO_PROCESSING_ROOT = 'videoprocessing'
+VIDEO_PROCESSING_VIDEO_FILE_NAME = 'video'
+VIDEO_PROCESSING_SUBTITLE_FILE_NAME = 'subtitle'
+ANALYTICS_DATA = ''
