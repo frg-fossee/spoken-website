@@ -124,9 +124,10 @@ urlpatterns = [
     # url(r'^events2/', include('events2.urls', namespace='events2')),
     url(r'^cron/', include('cron.urls', namespace='cron')),
 
+    url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing')),
+
     # cms
     url(r'^', include('cms.urls', namespace='cms')),
-    url(r'^videoprocessing/', include('videoprocessing.urls', namespace='videoprocessing')),
 
 
 
