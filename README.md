@@ -22,6 +22,3 @@ pip install -r requirements-py2.txt
 ```
 
 Create config.py in `spoken/` folder.
-
-
-

@@ -3387,4 +3387,3 @@ class StudentGradeFilter(UserPassesTestMixin, FormView):
       except FossMdlCourses.DoesNotExist:
         return None
     return None
-
